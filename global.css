@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 180 20% 99%;
+    --foreground: 200 40% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 200 40% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 40% 15%;
+    --primary: 175 60% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 30% 90%;
+    --secondary-foreground: 200 40% 15%;
+    --muted: 180 20% 92%;
+    --muted-foreground: 200 20% 45%;
+    --accent: 210 60% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 180 20% 85%;
+    --input: 180 20% 85%;
+    --ring: 175 60% 45%;
+    --radius: 24px;
+    --sidebar-background: 180 20% 99%;
+    --sidebar-foreground: 200 40% 15%;
+    --sidebar-primary: 175 60% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 180 30% 90%;
+    --sidebar-accent-foreground: 200 40% 15%;
+    --sidebar-border: 180 20% 85%;
+    --sidebar-ring: 175 60% 45%;
+  }
+
+  .dark {
+    --background: 200 40% 6%;
+    --foreground: 180 20% 90%;
+    --card: 200 35% 10%;
+    --card-foreground: 180 20% 90%;
+    --popover: 200 35% 10%;
+    --popover-foreground: 180 20% 90%;
+    --primary: 175 60% 45%;
+    --primary-foreground: 200 40% 6%;
+    --secondary: 200 30% 15%;
+    --secondary-foreground: 180 20% 90%;
+    --muted: 200 30% 12%;
+    --muted-foreground: 180 15% 65%;
+    --accent: 210 60% 60%;
+    --accent-foreground: 200 40% 6%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 200 30% 18%;
+    --input: 200 30% 18%;
+    --ring: 175 60% 45%;
+    --radius: 24px;
+    --sidebar-background: 200 40% 6%;
+    --sidebar-foreground: 180 20% 90%;
+    --sidebar-primary: 175 60% 45%;
+    --sidebar-primary-foreground: 200 40% 6%;
+    --sidebar-accent: 200 30% 15%;
+    --sidebar-accent-foreground: 180 20% 90%;
+    --sidebar-border: 200 30% 18%;
+    --sidebar-ring: 175 60% 45%;
+  }
+}
