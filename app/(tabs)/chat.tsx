@@ -1,10 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView, Image, Animated } from 'react-native';
+import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, Animated } from 'react-native';
 import { AppHeader } from '@/components/app-header';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Send, Smile, Wind, Brain, Activity, Mic } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Send, Smile, Mic } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/context/LocalizationContext';
 
@@ -25,31 +22,7 @@ export default function ChatPage() {
     },
   ]);
   const flatListRef = useRef<FlatList>(null);
-  const insets = useSafeAreaInsets();
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
-
-  const quickPrompts = [
-    {
-      icon: Smile,
-      label: t('chat.prompt.mood'),
-      prompt: t('chat.prompt.mood.full')
-    },
-    {
-      icon: Wind,
-      label: t('chat.prompt.breathing'),
-      prompt: t('chat.prompt.breathing.full')
-    },
-    {
-      icon: Brain,
-      label: t('chat.prompt.thoughts'),
-      prompt: t('chat.prompt.thoughts.full')
-    },
-    {
-      icon: Activity,
-      label: t('chat.prompt.sleep'),
-      prompt: t('chat.prompt.sleep.full')
-    },
-  ];
 
   React.useEffect(() => {
     Animated.loop(
@@ -66,7 +39,7 @@ export default function ChatPage() {
         }),
       ])
     ).start();
-  }, []);
+  }, [pulseAnim]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -214,7 +187,10 @@ export default function ChatPage() {
         {/* Premium Voice Session Button */}
         <View className="mb-6">
           <TouchableOpacity
-            className={cn("bg-[#8B5CF6] w-full h-14 rounded-full flex-row items-center justify-center", language === 'en' && "flex-row-reverse")}
+            className={cn(
+              "bg-primary w-full h-14 rounded-full flex-row items-center justify-center shadow-sm shadow-primary/20",
+              language === 'en' && "flex-row-reverse"
+            )}
             activeOpacity={0.8}
           >
             <View className={language === 'ar' ? "mr-2" : "ml-2"}>
@@ -223,7 +199,7 @@ export default function ChatPage() {
             <Text className={cn("text-primary-foreground text-[14px] font-bold", language === 'ar' ? "mr-3" : "ml-3")}>{t('chat.voiceSession')}</Text>
             <Animated.View
               style={{ opacity: pulseAnim }}
-              className={cn("h-2 w-2 rounded-full bg-accent border border-primary-foreground", language === 'ar' ? "ml-0" : "mr-0")}
+              className={cn("h-2 w-2 rounded-full bg-primary-foreground/90 border border-primary-foreground", language === 'ar' ? "ml-0" : "mr-0")}
             />
           </TouchableOpacity>
         </View>

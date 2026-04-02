@@ -1,10 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { AppHeader } from '@/components/app-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Brain, ChevronLeft, Target, RefreshCw, PenLine, ArrowRight, AlertCircle, Lightbulb } from 'lucide-react-native';
-import { Video, ResizeMode } from 'expo-av';
 import { cn } from '@/lib/utils';
 
 interface CBTExercise {
@@ -74,8 +71,6 @@ const cognitiveDistortions = [
 
 export default function CBTPage() {
   const [activeExercise, setActiveExercise] = useState<CBTExercise | null>(null);
-  const video = useRef(null);
-  const [status, setStatus] = useState({});
 
   return (
     <View className="flex-1 bg-[#FDFDFD]">
@@ -287,7 +282,7 @@ export default function CBTPage() {
                           </Text>
 
                           <View className="bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-                            <Text className="text-[11px] text-slate-600 text-right leading-5 italic">مثال: "{distortion.example}"</Text>
+                            <Text className="text-[11px] text-slate-600 text-right leading-5 italic">مثال: «{distortion.example}»</Text>
                           </View>
 
                           <View className="flex-row-reverse items-start gap-3 mt-1 bg-teal-50/40 p-3 rounded-xl border border-teal-100/30">

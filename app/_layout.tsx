@@ -3,9 +3,10 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import * as SplashScreen from 'expo-splash-screen';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/react-query';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LocalizationProvider } from '@/context/LocalizationContext';
 import { View } from 'react-native';
 
@@ -13,17 +14,31 @@ import { ThemeModeProvider } from '@/hooks/use-color-scheme';
 import { useEffect } from 'react';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 
+void SplashScreen.preventAutoHideAsync();
+
+function SplashController() {
+  const { loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      void SplashScreen.hideAsync();
+    }
+  }, [loading]);
+
+  return null;
+}
+
 function AppContent() {
   const { colorScheme } = useNativeWindColorScheme();
 
   useEffect(() => {
-    console.log('NativeWind colorScheme changed to:', colorScheme);
   }, [colorScheme]);
 
   return (
     <View key={colorScheme ?? 'light'} className={`flex-1 ${colorScheme === 'dark' ? 'dark' : ''}`}>
       <LocalizationProvider>
         <AuthProvider>
+          <SplashController />
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -53,4 +68,3 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
-

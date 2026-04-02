@@ -30,7 +30,7 @@ export function AppHeader() {
         >
           <Image
             source={require('../assets/images/logoTrans.png')}
-            className="h-8 w-8"
+            style={{ width: 32, height: 32 }}
             resizeMode="contain"
           />
         </View>
