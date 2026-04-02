@@ -1,37 +1,21 @@
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Dimensions } from 'react-native';
 import { Stack } from 'expo-router';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
+import { useReportOverview, useMoodTrends } from '@/hooks/use-reports';
+import { useSleepChart } from '@/hooks/use-sleep';
+import { LoadingState } from '@/components/ui/loading-state';
 
 export default function Reports() {
   const primary = useThemeColor({}, 'tint');
   const background = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
 
-  // Sample data - in a real app this would come from the database
-  const moodData = {
-    labels: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"],
-    datasets: [
-      {
-        data: [3, 4, 2, 5, 4, 3, 4], // 1-5 scale
-        color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
-        strokeWidth: 2
-      }
-    ],
-    legend: ["المزاج العام"]
-  };
-
-  const sleepData = {
-    labels: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"],
-    datasets: [
-      {
-        data: [6, 7, 5, 8, 7, 6, 7]
-      }
-    ]
-  };
+  const { data: overview, isLoading: overviewLoading } = useReportOverview();
+  const { data: moodTrends } = useMoodTrends();
+  const { data: sleepChart } = useSleepChart();
 
   const chartConfig = {
     backgroundGradientFrom: background,
@@ -39,15 +23,28 @@ export default function Reports() {
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
     labelColor: (opacity = 1) => text,
-    style: {
-      borderRadius: 16
-    },
-    propsForDots: {
-      r: "6",
-      strokeWidth: "2",
-      stroke: "#ffa726"
-    }
+    style: { borderRadius: 16 },
+    propsForDots: { r: "6", strokeWidth: "2", stroke: "#ffa726" },
   };
+
+  const moodData = moodTrends && moodTrends.length > 0
+    ? {
+        labels: moodTrends.slice(-7).map((t) => {
+          const d = new Date(t.date);
+          return d.toLocaleDateString('ar-SA', { weekday: 'short' });
+        }),
+        datasets: [{ data: moodTrends.slice(-7).map((t) => t.score), color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`, strokeWidth: 2 }],
+        legend: ['المزاج العام'],
+      }
+    : {
+        labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+        datasets: [{ data: [0, 0, 0, 0, 0, 0, 0], color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`, strokeWidth: 2 }],
+        legend: ['المزاج العام'],
+      };
+
+  const sleepData = sleepChart && (sleepChart.data?.length ?? 0) > 0
+    ? { labels: sleepChart.labels, datasets: [{ data: sleepChart.data }] }
+    : { labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'], datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }] };
 
   return (
     <>
@@ -63,119 +60,68 @@ export default function Reports() {
           </View>
         </View>
 
-        {/* Weekly Summary Card */}
-        <Card className="mb-6 border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-right">ملخص الأسبوع</CardTitle>
-            <CardDescription className="text-right">نظرة عامة على أدائك هذا الأسبوع</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <View className="flex-row justify-between flex-wrap">
-              <View className="w-[48%] bg-secondary/10 p-3 rounded-lg mb-3 items-center">
-                <Text className="text-2xl font-bold text-primary">4.2</Text>
-                <Text className="text-xs text-muted-foreground">متوسط المزاج</Text>
+        {overviewLoading ? <LoadingState /> : (
+          <Card className="mb-6 border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-right">ملخص الأسبوع</CardTitle>
+              <CardDescription className="text-right">نظرة عامة على أدائك هذا الأسبوع</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <View className="flex-row justify-between flex-wrap">
+                <View className="w-[48%] bg-secondary/10 p-3 rounded-lg mb-3 items-center">
+                  <Text className="text-2xl font-bold text-primary">
+                    {overview?.moodAverage?.toFixed(1) ?? '—'}
+                  </Text>
+                  <Text className="text-xs text-muted-foreground">متوسط المزاج</Text>
+                </View>
+                <View className="w-[48%] bg-secondary/10 p-3 rounded-lg mb-3 items-center">
+                  <Text className="text-2xl font-bold text-primary">
+                    {overview?.sleepAverage?.toFixed(1) ?? '—'}
+                  </Text>
+                  <Text className="text-xs text-muted-foreground">ساعات النوم</Text>
+                </View>
+                <View className="w-[48%] bg-secondary/10 p-3 rounded-lg items-center">
+                  <Text className="text-2xl font-bold text-primary">
+                    {overview?.gratitudeStreak ?? 0}
+                  </Text>
+                  <Text className="text-xs text-muted-foreground">أيام متتالية</Text>
+                </View>
+                <View className="w-[48%] bg-secondary/10 p-3 rounded-lg items-center">
+                  <Text className="text-2xl font-bold text-primary">
+                    {overview?.breathingSessionsThisWeek ?? 0}
+                  </Text>
+                  <Text className="text-xs text-muted-foreground">جلسات تنفس</Text>
+                </View>
               </View>
-              <View className="w-[48%] bg-secondary/10 p-3 rounded-lg mb-3 items-center">
-                <Text className="text-2xl font-bold text-primary">6.8</Text>
-                <Text className="text-xs text-muted-foreground">ساعات النوم</Text>
-              </View>
-              <View className="w-[48%] bg-secondary/10 p-3 rounded-lg items-center">
-                <Text className="text-2xl font-bold text-primary">85%</Text>
-                <Text className="text-xs text-muted-foreground">إكمال المهام</Text>
-              </View>
-              <View className="w-[48%] bg-secondary/10 p-3 rounded-lg items-center">
-                <Text className="text-2xl font-bold text-primary">3</Text>
-                <Text className="text-xs text-muted-foreground">جلسات تأمل</Text>
-              </View>
-            </View>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Mood Chart */}
         <View className="mb-6">
           <Text className="text-lg font-bold text-foreground mb-4 text-right">تحليل المزاج</Text>
           <LineChart
             data={moodData}
-            width={Dimensions.get("window").width - 32}
+            width={Dimensions.get('window').width - 32}
             height={220}
             chartConfig={chartConfig}
             bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
+            style={{ marginVertical: 8, borderRadius: 16 }}
           />
         </View>
 
-        {/* Sleep Chart */}
         <View className="mb-6">
           <Text className="text-lg font-bold text-foreground mb-4 text-right">جودة النوم</Text>
           <BarChart
             data={sleepData}
-            width={Dimensions.get("window").width - 32}
+            width={Dimensions.get('window').width - 32}
             height={220}
             yAxisLabel=""
             yAxisSuffix=" س"
-            chartConfig={{
-              ...chartConfig,
-              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
+            chartConfig={{ ...chartConfig, color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})` }}
+            style={{ marginVertical: 8, borderRadius: 16 }}
             verticalLabelRotation={0}
           />
         </View>
-
-        {/* Assessments Progress */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-right">تطور التقييمات النفسية</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View className="space-y-4">
-              <View>
-                <View className="flex-row justify-between mb-2">
-                  <Badge variant="outline">تحسن ملحوظ</Badge>
-                  <Text className="font-medium text-foreground">القلق (GAD-7)</Text>
-                </View>
-                <View className="h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <View className="h-full bg-blue-500 w-[40%]" />
-                </View>
-                <Text className="text-xs text-muted-foreground mt-1 text-right">الدرجة الحالية: 8 (قلق خفيف)</Text>
-              </View>
-
-              <View>
-                <View className="flex-row justify-between mb-2">
-                  <Badge variant="outline">مستقر</Badge>
-                  <Text className="font-medium text-foreground">الاكتئاب (PHQ-9)</Text>
-                </View>
-                <View className="h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <View className="h-full bg-green-500 w-[30%]" />
-                </View>
-                <Text className="text-xs text-muted-foreground mt-1 text-right">الدرجة الحالية: 6 (اكتئاب خفيف)</Text>
-              </View>
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* AI Insights */}
-        <Card className="mb-6 bg-primary/5 border-primary/20">
-          <CardHeader>
-            <View className="flex-row justify-end items-center gap-2">
-              <Text className="text-lg font-bold text-primary">تحليلات الذكاء الاصطناعي</Text>
-              <Ionicons name="sparkles" size={20} color={primary} />
-            </View>
-          </CardHeader>
-          <CardContent>
-            <Text className="text-foreground text-right leading-6">
-              بناءً على بياناتك المسجلة، يلاحظ وجود تحسن في جودة نومك في الأيام التي تمارس فيها تمارين التنفس. 
-              مزاجك يميل للتحسن في عطلة نهاية الأسبوع. 
-              نوصي بالاستمرار في روتين ما قبل النوم الحالي ومحاولة دمج المشي القصير في أيام العمل.
-            </Text>
-          </CardContent>
-        </Card>
       </ScrollView>
     </>
   );

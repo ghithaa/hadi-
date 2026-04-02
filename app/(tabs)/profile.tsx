@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/app-header';
 import {
@@ -18,11 +18,36 @@ import {
   Camera,
 } from 'lucide-react-native';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { t, language } = useLocalization();
+  const { user, signOut } = useAuth();
+
+  const doLogout = async () => {
+    await signOut();
+    router.replace('/auth/login' as any);
+  };
+
+  const handleLogout = async () => {
+    if (Platform.OS === 'web') {
+      // Alert.alert is a no-op on web — use browser confirm instead
+      if (window.confirm('هل أنت متأكد أنك تريد تسجيل الخروج؟')) {
+        await doLogout();
+      }
+      return;
+    }
+    Alert.alert(
+      'تسجيل الخروج',
+      'هل أنت متأكد أنك تريد تسجيل الخروج؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'تسجيل الخروج', style: 'destructive', onPress: doLogout },
+      ]
+    );
+  };
 
   const menuGroups = [
     {
@@ -67,8 +92,12 @@ export default function ProfilePage() {
               <Crown size={16} color="white" fill="white" />
             </View>
           </View>
-          <Text className="text-2xl font-bold text-foreground">{t('profile.main.guestName')}</Text>
-          <Text className="text-sm text-muted-foreground font-medium mt-1">guest@hadi.sa</Text>
+          <Text className="text-2xl font-bold text-foreground">
+            {user?.fullName || t('profile.main.guestName')}
+          </Text>
+          <Text className="text-sm text-muted-foreground font-medium mt-1">
+            {user?.email || 'guest@hadi.sa'}
+          </Text>
         </View>
 
         {/* Premium Banner */}
@@ -138,7 +167,10 @@ export default function ProfilePage() {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity className={cn("flex-row items-center justify-center p-5 rounded-[24px] bg-destructive/10 dark:bg-destructive/20 mb-8 border border-destructive/10 active:scale-[0.98]", language === 'en' && "flex-row-reverse")}>
+        <TouchableOpacity
+          onPress={handleLogout}
+          className={cn("flex-row items-center justify-center p-5 rounded-[24px] bg-destructive/10 dark:bg-destructive/20 mb-8 border border-destructive/10 active:scale-[0.98]", language === 'en' && "flex-row-reverse")}
+        >
           <Text className={cn("text-destructive font-bold text-base", language === 'ar' ? "mr-3" : "ml-3")}>{t('profile.main.logout')}</Text>
           <LogOut size={22} className="text-destructive" />
         </TouchableOpacity>

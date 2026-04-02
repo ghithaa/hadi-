@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useLocalization } from '@/context/LocalizationContext';
 import { useThemeMode } from '@/hooks/use-color-scheme';
+import { useUnreadCount } from '@/hooks/use-notifications';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 export function AppHeader() {
@@ -11,6 +13,9 @@ export function AppHeader() {
   const router = useRouter();
   const { t, language, setLanguage } = useLocalization();
   const { colorScheme, toggleTheme } = useThemeMode();
+  const { user } = useAuth();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   return (
     <View
@@ -71,11 +76,13 @@ export function AppHeader() {
           className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50 relative"
         >
           <Bell size={18} color="#64748b" /> 
-          {/* Notification Dot */}
-          <View className={cn(
-            "absolute top-2.5 h-2.5 w-2.5 rounded-full bg-rose-500 border-2 border-background",
-            language === 'ar' ? "right-2.5" : "left-2.5"
-          )} />
+          {/* Notification Dot — only show when authenticated and has unread */}
+          {user && unreadCount > 0 && (
+            <View className={cn(
+              "absolute top-2.5 h-2.5 w-2.5 rounded-full bg-rose-500 border-2 border-background",
+              language === 'ar' ? "right-2.5" : "left-2.5"
+            )} />
+          )}
         </TouchableOpacity>
 
         {/* Highlighted Profile Button */}

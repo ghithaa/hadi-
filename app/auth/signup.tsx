@@ -1,24 +1,52 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Lock, ArrowLeft } from 'lucide-react-native';
+import { Mail, Lock, User, ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { useLocalization } from '@/context/LocalizationContext';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signUp, error, clearError } = useAuth();
   const { t } = useLocalization();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUp = () => {
-    signIn();
-    router.replace('/(tabs)');
+  const handleSignUp = async () => {
+    clearError();
+
+    if (!fullName.trim()) {
+      Alert.alert('خطأ', 'يرجى إدخال الاسم الكامل');
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert('خطأ', 'يرجى إدخال البريد الإلكتروني');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('خطأ', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('خطأ', 'كلمة المرور غير متطابقة');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signUp({ email: email.trim(), password, fullName: fullName.trim() });
+      router.replace('/(tabs)');
+    } catch {
+      // Error is already set in AuthContext
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,6 +79,15 @@ export default function SignupScreen() {
 
       <View className="gap-4 w-full max-w-sm mx-auto">
         <Input
+          label="الاسم الكامل"
+          placeholder="أدخل اسمك الكامل"
+          value={fullName}
+          onChangeText={setFullName}
+          icon={<User size={18} className="text-muted-foreground" />}
+          autoCapitalize="words"
+        />
+
+        <Input
           label={t('auth.signup.emailLabel')}
           placeholder={t('auth.signup.emailPlaceholder')}
           value={email}
@@ -78,13 +115,24 @@ export default function SignupScreen() {
           icon={<Lock size={18} className="text-muted-foreground" />}
         />
 
+        {error && (
+          <View className="bg-destructive/10 border border-destructive/20 rounded-xl p-3">
+            <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+          </View>
+        )}
+
         <Button
           className="w-full mt-6 h-14"
           onPress={handleSignUp}
+          disabled={isLoading}
         >
-          <Text className="text-primary-foreground font-bold text-lg">
-            {t('auth.signup.button')}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-primary-foreground font-bold text-lg">
+              {t('auth.signup.button')}
+            </Text>
+          )}
         </Button>
       </View>
     </SafeAreaView>

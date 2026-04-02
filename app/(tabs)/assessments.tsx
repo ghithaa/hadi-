@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ClipboardList, ChevronRight, Briefcase, User, Heart, Users } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useSubmitAssessment } from '@/hooks/use-assessments';
 
 type AssessmentCategory = 'functional' | 'personal' | 'self' | 'social';
 
@@ -95,7 +96,7 @@ const assessments: Assessment[] = [
 
   // Self (Narcissism, Self-Love)
   {
-    id: "self-esteem",
+    id: "self_esteem",
     title: "مقياس تقدير الذات",
     description: "قيم نظرتك لنفسك ومدى تقديرك لها",
     badge: "تطوير الذات",
@@ -115,7 +116,7 @@ const assessments: Assessment[] = [
 
   // Social (Social, Family, Marital)
   {
-    id: "social-anxiety",
+    id: "social_anxiety",
     title: "القلق الاجتماعي",
     description: "مدى راحتك في المواقف الاجتماعية",
     badge: "اجتماعي",
@@ -140,6 +141,7 @@ export default function AssessmentsPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<{ level: string; color: string; advice: string } | null>(null);
+  const submitAssessment = useSubmitAssessment();
 
   const categories: { id: AssessmentCategory; title: string; icon: any }[] = [
     { id: 'functional', title: t('assessments.category.functional'), icon: Briefcase },
@@ -163,7 +165,17 @@ export default function AssessmentsPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (activeAssessment) {
       const totalScore = newAnswers.reduce((a, b) => a + b, 0);
-      setResult(activeAssessment.getResult(totalScore));
+      const localResult = activeAssessment.getResult(totalScore);
+      setResult(localResult);
+      // Also submit to backend (fire-and-forget)
+      submitAssessment.mutate({
+        assessmentType: activeAssessment.id,
+        answers: newAnswers.map((score, questionIndex) => ({
+          questionIndex,
+          selectedOption: activeAssessment.options.find(o => o.value === score)?.label ?? String(score),
+          score,
+        })),
+      });
     }
   };
 
