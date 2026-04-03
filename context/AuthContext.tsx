@@ -1,16 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+type AuthData = {
+  user: any;
+  token?: string;
+  refreshToken?: string;
+};
+
 type AuthContextType = {
   user: any;
-  signIn: () => void;
+  authData: AuthData | null;
+  signIn: (data?: AuthData) => void;
   signOut: () => void;
+  logout: () => void;
   loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const [authData, setAuthData] = useState<AuthData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,16 +31,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const signIn = () => {
-    setUser({ name: 'User' });
+  const signIn = (data?: AuthData) => {
+    setAuthData(data || { user: { name: 'User' }, token: 'mock-token' });
   };
 
   const signOut = () => {
-    setUser(null);
+    setAuthData(null);
   };
 
+  const logout = () => {
+    setAuthData(null);
+  };
+
+  const user = authData?.user || null;
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, authData, signIn, signOut, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
