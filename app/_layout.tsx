@@ -8,7 +8,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/react-query';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LocalizationProvider } from '@/context/LocalizationContext';
-import { FetchProvider } from '@/context/FetchContext';
 import { View } from 'react-native';
 
 import { ThemeModeProvider } from '@/hooks/use-color-scheme';
@@ -39,23 +38,21 @@ function AppContent() {
     <View key={colorScheme ?? 'light'} className={`flex-1 ${colorScheme === 'dark' ? 'dark' : ''}`}>
       <LocalizationProvider>
         <AuthProvider>
-          <FetchProvider>
-            <SplashController />
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-                <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
-                <Stack.Screen name="intro" options={{ headerShown: false }} />
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="breathing-exercise/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="journeys/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="profile-details/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            </ThemeProvider>
-          </FetchProvider>
+          <SplashController />
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
+              <Stack.Screen name="intro" options={{ headerShown: false }} />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="breathing-exercise/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="journeys/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="profile-details/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          </ThemeProvider>
         </AuthProvider>
       </LocalizationProvider>
     </View>
