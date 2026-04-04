@@ -20,9 +20,17 @@ function SplashController() {
   const { loading } = useAuth();
 
   useEffect(() => {
+    // Failsafe: hide splash screen after 5 seconds regardless of auth state
+    const timeout = setTimeout(() => {
+      void SplashScreen.hideAsync();
+    }, 5000);
+
     if (!loading) {
       void SplashScreen.hideAsync();
+      clearTimeout(timeout);
     }
+
+    return () => clearTimeout(timeout);
   }, [loading]);
 
   return null;
