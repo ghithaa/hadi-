@@ -17,26 +17,26 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = async () => {
-    clearError();
+    // clearError();
 
-    if (!email.trim()) {
-      Alert.alert('خطأ', 'يرجى إدخال البريد الإلكتروني');
-      return;
-    }
-    if (!password.trim()) {
-      Alert.alert('خطأ', 'يرجى إدخال كلمة المرور');
-      return;
-    }
+    // if (!email.trim()) {
+    //   Alert.alert('خطأ', 'يرجى إدخال البريد الإلكتروني');
+    //   return;
+    // }
+    // if (!password.trim()) {
+    //   Alert.alert('خطأ', 'يرجى إدخال كلمة المرور');
+    //   return;
+    // }
 
-    setIsLoading(true);
-    try {
-      await signIn(email.trim(), password);
+    // setIsLoading(true);
+    // try {
+    //   await signIn(email.trim(), password);
       router.replace('/(tabs)');
-    } catch {
+    // } catch {
       // Error is already set in AuthContext
-    } finally {
-      setIsLoading(false);
-    }
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   const handleGoogleLogin = () => {
