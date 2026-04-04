@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,14 +10,41 @@ import { useLocalization } from '@/context/LocalizationContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, error, clearError } = useAuth();
   const { t } = useLocalization();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = () => {
-    signIn();
-    router.replace('/(tabs)');
+  const handleSignIn = async () => {
+    // clearError();
+
+    // if (!email.trim()) {
+    //   Alert.alert('خطأ', 'يرجى إدخال البريد الإلكتروني');
+    //   return;
+    // }
+    // if (!password.trim()) {
+    //   Alert.alert('خطأ', 'يرجى إدخال كلمة المرور');
+    //   return;
+    // }
+
+    // setIsLoading(true);
+    // try {
+    //   await signIn(email.trim(), password);
+      router.replace('/(tabs)');
+    // } catch {
+      // Error is already set in AuthContext
+    // } finally {
+    //   setIsLoading(false);
+    // }
+  };
+
+  const handleGoogleLogin = () => {
+    Alert.alert('قريباً', 'تسجيل الدخول عبر Google سيكون متاحاً قريباً');
+  };
+
+  const handleAppleLogin = () => {
+    Alert.alert('قريباً', 'تسجيل الدخول عبر Apple سيكون متاحاً قريباً');
   };
 
   return (
@@ -39,15 +66,15 @@ export default function LoginScreen() {
       </View>
 
       <View className="gap-4 w-full max-w-sm mx-auto">
-        <Button variant="outline" className="flex-row gap-2 w-full justify-center h-14">
+        <Button variant="outline" className="flex-row gap-2 w-full justify-center h-14" onPress={handleGoogleLogin}>
           <Text className="text-xl">G</Text>
           <Text className="text-foreground font-medium text-lg">
             {t('auth.login.google')}
           </Text>
         </Button>
 
-        <Button variant="outline" className="flex-row gap-2 w-full justify-center h-14">
-          <Text className="text-xl text-foreground"></Text>
+        <Button variant="outline" className="flex-row gap-2 w-full justify-center h-14" onPress={handleAppleLogin}>
+          <Text className="text-xl text-foreground"></Text>
           <Text className="text-foreground font-medium text-lg">
             {t('auth.login.apple')}
           </Text>
@@ -78,13 +105,24 @@ export default function LoginScreen() {
           icon={<Lock size={18} className="text-muted-foreground" />}
         />
 
+        {error && (
+          <View className="bg-destructive/10 border border-destructive/20 rounded-xl p-3">
+            <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+          </View>
+        )}
+
         <Button
           className="w-full mt-4 h-14"
           onPress={handleSignIn}
+          disabled={isLoading}
         >
-          <Text className="text-primary-foreground font-bold text-lg">
-            {t('auth.login.button')}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-primary-foreground font-bold text-lg">
+              {t('auth.login.button')}
+            </Text>
+          )}
         </Button>
 
         <View className="flex-row justify-center mt-4">

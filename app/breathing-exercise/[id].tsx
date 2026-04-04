@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, Easing, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Animated, Easing, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, ArrowLeft, Volume2, X } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, Volume2, X } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { patterns, BreathingPhase } from '@/constants/breathing-patterns';
 import Svg, { Circle } from 'react-native-svg';
+import { useLogBreathingSession } from '@/hooks/use-breathing';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -18,6 +18,8 @@ export default function BreathingExercisePage() {
   const [phase, setPhase] = useState<BreathingPhase>('inhale');
   const [cycle, setCycle] = useState(1);
   const [timeLeft, setTimeLeft] = useState(pattern.timings.inhale / 1000);
+  const startTimeRef = useRef<number | null>(null);
+  const logBreathingSession = useLogBreathingSession();
   
   // Animation values
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -136,14 +138,34 @@ export default function BreathingExercisePage() {
   }, [isActive, pattern]);
 
   const toggleBreathing = () => {
+    if (!isActive) {
+      startTimeRef.current = Date.now();
+    } else if (cycle > 1) {
+      // Log session when paused after at least one cycle
+      const durationSeconds = Math.round((Date.now() - (startTimeRef.current ?? Date.now())) / 1000);
+      logBreathingSession.mutate({
+        patternId: pattern.id,
+        cyclesCompleted: cycle - 1,
+        durationSeconds,
+      });
+    }
     setIsActive(!isActive);
   };
 
   const reset = () => {
+    if (isActive && cycle > 1) {
+      const durationSeconds = Math.round((Date.now() - (startTimeRef.current ?? Date.now())) / 1000);
+      logBreathingSession.mutate({
+        patternId: pattern.id,
+        cyclesCompleted: cycle - 1,
+        durationSeconds,
+      });
+    }
     setIsActive(false);
     setCycle(1);
     setPhase('inhale');
     setTimeLeft(pattern.timings.inhale / 1000);
+    startTimeRef.current = null;
   };
 
   const getPhaseText = () => {

@@ -1,28 +1,22 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { AppHeader } from '@/components/app-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Phone, AlertTriangle } from 'lucide-react-native';
+import { useHelplines } from '@/hooks/use-emergency';
 
-const emergencyContacts = [
-  {
-    title: "الهلال الأحمر السعودي",
-    number: "997",
-    description: "للحالات الطبية الطارئة",
-  },
-  {
-    title: "مركز الاتصال الموحد للصحة النفسية",
-    number: "937",
-    description: "استشارات طبية ونفسية عاجلة",
-  },
-  {
-    title: "لجنة تعزيز الصحة النفسية",
-    number: "920033360",
-    description: "استشارات نفسية متخصصة",
-  },
+// Fallback data — emergency info must always be accessible
+const fallbackContacts = [
+  { title: 'الهلال الأحمر السعودي', number: '997', description: 'للحالات الطبية الطارئة' },
+  { title: 'مركز الاتصال الموحد للصحة النفسية', number: '937', description: 'استشارات طبية ونفسية عاجلة' },
+  { title: 'لجنة تعزيز الصحة النفسية', number: '920033360', description: 'استشارات نفسية متخصصة' },
 ];
 
 export default function EmergencyPage() {
+  const { data: helplines } = useHelplines();
+
+  const contacts = (helplines && helplines.length > 0) ? helplines : fallbackContacts;
+
   const handleCall = (number: string) => {
     Linking.openURL(`tel:${number}`);
   };
@@ -33,7 +27,7 @@ export default function EmergencyPage() {
       <ScrollView className="flex-1 px-4 pb-6">
         <View className="mt-6 mb-6 items-center">
           <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle size={32} className="text-destructive" color="#ef4444" />
+            <AlertTriangle size={32} color="#ef4444" />
           </View>
           <Text className="mb-2 text-2xl font-bold text-foreground">الدعم والمساعدة</Text>
           <Text className="text-center text-muted-foreground">
@@ -42,10 +36,10 @@ export default function EmergencyPage() {
         </View>
 
         <View className="gap-4">
-          {emergencyContacts.map((contact, index) => (
+          {contacts.map((contact, index) => (
             <Card key={index} className="border-destructive/20">
               <CardContent className="p-4 flex-row items-center justify-between">
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => handleCall(contact.number)}
                   className="h-10 w-10 items-center justify-center rounded-full bg-green-500"
                 >

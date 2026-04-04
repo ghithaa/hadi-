@@ -1,104 +1,50 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { AppHeader } from '@/components/app-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Slider from '@react-native-community/slider';
-import { Moon, Sun, Clock, TrendingUp, Zap, Info } from 'lucide-react-native';
+import { Moon, Clock, TrendingUp, Zap } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
-
-interface SleepEntry {
-  id: string;
-  date: string;
-  hours: number;
-  quality: number;
-  note: string;
-}
+import { useSleepStats, useSleepChart, useSleepToday, useLogSleep } from '@/hooks/use-sleep';
 
 const qualityLabels = ["", "سيء جدا", "سيء", "متوسط", "جيد", "ممتاز"];
-const qualityColors = [
-  "",
-  "text-destructive",
-  "text-orange-500",
-  "text-amber-500",
-  "text-primary",
-  "text-accent",
-];
-
-function generateSampleSleep(): SleepEntry[] {
-  const entries: SleepEntry[] = [];
-  const today = new Date();
-  const hours = [6, 7.5, 5.5, 8, 7, 6.5, 7.5];
-  const qualities = [3, 4, 2, 5, 4, 3, 4];
-  const notes = [
-    "استيقظت مرتين خلال الليل",
-    "نمت نوم عميق ومريح",
-    "سهرت بسبب ضغط العمل",
-    "افضل ليلة نوم هذا الاسبوع",
-    "نوم جيد بشكل عام",
-    "تأخرت في النوم بسبب الهاتف",
-    "نوم مريح بعد تمرين رياضي",
-  ];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    entries.push({
-      id: `s-${i}`,
-      date: date.toISOString().split("T")[0],
-      hours: hours[6 - i],
-      quality: qualities[6 - i],
-      note: notes[6 - i],
-    });
-  }
-  return entries;
-}
+const qualityColors = ["", "text-destructive", "text-orange-500", "text-amber-500", "text-primary", "text-accent"];
 
 export default function SleepPage() {
-  const insets = useSafeAreaInsets();
-  const [entries, setEntries] = useState<SleepEntry[]>(generateSampleSleep);
   const [hours, setHours] = useState(7);
   const [quality, setQuality] = useState<number | null>(null);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState('');
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const hasLoggedToday = entries.some((e) => e.date === todayStr);
+  const { data: stats } = useSleepStats();
+  const { data: chartData, isLoading: chartLoading } = useSleepChart();
+  const { data: todayEntry } = useSleepToday();
+  const logSleep = useLogSleep();
 
-  const avgHours = useMemo(() => {
-    if (entries.length === 0) return 0;
-    return (entries.reduce((s, e) => s + e.hours, 0) / entries.length).toFixed(1);
-  }, [entries]);
+  const hasLoggedToday = todayEntry?.logged ?? false;
 
-  const avgQuality = useMemo(() => {
-    if (entries.length === 0) return 0;
-    return (entries.reduce((s, e) => s + e.quality, 0) / entries.length).toFixed(1);
-  }, [entries]);
-
-  const chartData = useMemo(() => {
+  const formattedChartData = useMemo(() => {
+    if (chartData?.data && chartData.data.length > 0) {
+      return {
+        labels: chartData.labels,
+        datasets: [{ data: chartData.data, color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, strokeWidth: 3 }],
+      };
+    }
     return {
-      labels: entries.map((e) => new Date(e.date).toLocaleDateString("ar-SA", { weekday: "short" })),
-      datasets: [
-        {
-          data: entries.map((e) => e.hours),
-          color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, // primary
-          strokeWidth: 3
-        }
-      ]
+      labels: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"],
+      datasets: [{ data: [6, 7.5, 5.5, 8, 7, 6.5, 7.5], color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, strokeWidth: 3 }],
     };
-  }, [entries]);
+  }, [chartData]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (quality === null) return;
-    const newEntry: SleepEntry = {
-      id: Date.now().toString(),
-      date: todayStr,
-      hours,
-      quality,
-      note,
-    };
-    setEntries([...entries, newEntry]);
+    try {
+      await logSleep.mutateAsync({ hours, quality, note: note.trim() || undefined });
+      setNote('');
+      setQuality(null);
+    } catch {
+      // Error handled by React Query
+    }
   };
 
   return (
@@ -107,61 +53,43 @@ export default function SleepPage() {
         <AppHeader />
       </View>
 
-      {/* Organic Background Blobs */}
       <View className="absolute inset-0 overflow-hidden opacity-[0.1]">
-        <View
-          className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-primary/10"
-          style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }}
-        />
-        <View
-          className="absolute top-1/4 -right-40 h-[350px] w-[350px] rounded-full bg-accent/10"
-          style={{ transform: [{ scaleX: 1.2 }] }}
-        />
-        <View
-          className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-secondary/20"
-        />
+        <View className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-primary/10" style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }} />
+        <View className="absolute top-1/4 -right-40 h-[350px] w-[350px] rounded-full bg-accent/10" style={{ transform: [{ scaleX: 1.2 }] }} />
+        <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-secondary/20" />
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <View className="mt-8 gap-6">
           <View className="flex-row-reverse justify-between gap-4">
-            <View
-              className="flex-1 bg-card/60 border border-border/40 rounded-[30px] p-5 items-center justify-center"
-              style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}
-            >
+            <View className="flex-1 bg-card/60 border border-border/40 rounded-[30px] p-5 items-center justify-center" style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}>
               <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 mb-3">
                 <Moon color="#0f766e" size={24} />
               </View>
-              <Text className="text-2xl font-bold text-foreground">{avgHours}</Text>
+              <Text className="text-2xl font-bold text-foreground">
+                {stats?.averageHours?.toFixed(1) ?? '—'}
+              </Text>
               <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">متوسط الساعات</Text>
             </View>
-            <View
-              className="flex-1 bg-card/60 border border-border/40 rounded-[30px] p-5 items-center justify-center"
-              style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}
-            >
+            <View className="flex-1 bg-card/60 border border-border/40 rounded-[30px] p-5 items-center justify-center" style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}>
               <View className="h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 mb-3">
                 <Zap color="#3b82f6" size={24} />
               </View>
-              <Text className="text-2xl font-bold text-foreground">{avgQuality}</Text>
+              <Text className="text-2xl font-bold text-foreground">
+                {stats?.averageQuality?.toFixed(1) ?? '—'}
+              </Text>
               <Text className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">جودة النوم</Text>
             </View>
           </View>
 
-          <View
-            className="bg-card border border-border/40 rounded-[35px] py-6 shadow-2xl overflow-hidden"
-            style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}
-          >
+          <View className="bg-card border border-border/40 rounded-[35px] py-6 shadow-2xl overflow-hidden" style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}>
             <View className="px-6 mb-4">
               <Text className="text-xl font-bold text-foreground text-right">تحليل النوم</Text>
               <Text className="text-xs text-muted-foreground text-right mt-0.5 font-medium">نظرة عامة على نمط نومك خلال الاسبوع</Text>
             </View>
             <View className="items-center">
               <LineChart
-                data={chartData}
+                data={formattedChartData}
                 width={Dimensions.get("window").width - 40}
                 height={200}
                 chartConfig={{
@@ -171,36 +99,22 @@ export default function SleepPage() {
                   backgroundGradientFromOpacity: 0,
                   backgroundGradientToOpacity: 0,
                   decimalPlaces: 1,
-                  color: (opacity = 1) => `rgba(15, 118, 110, ${opacity})`, // primary teal-700
-                  labelColor: (opacity = 1) => `rgba(var(--foreground), ${opacity})`,
+                  color: (opacity = 1) => `rgba(15, 118, 110, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
                   style: { borderRadius: 24 },
-                  propsForDots: {
-                    r: "5",
-                    strokeWidth: "2",
-                    stroke: "#ffffff",
-                    fill: "#0f766e"
-                  },
-                  propsForLabels: {
-                    fontSize: 10,
-                    fontWeight: 'bold'
-                  }
+                  propsForDots: { r: "5", strokeWidth: "2", stroke: "#ffffff", fill: "#0f766e" },
+                  propsForLabels: { fontSize: 10, fontWeight: 'bold' },
                 }}
                 bezier
                 withVerticalLines={false}
                 withHorizontalLines={true}
                 withShadow={true}
-                style={{
-                  marginVertical: 8,
-                  marginRight: 20
-                }}
+                style={{ marginVertical: 8, marginRight: 20 }}
               />
             </View>
           </View>
 
-          <View
-            className="bg-card border border-border/40 rounded-[35px] p-6 shadow-2xl"
-            style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}
-          >
+          <View className="bg-card border border-border/40 rounded-[35px] p-6 shadow-2xl" style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}>
             <View className="mb-6">
               <Text className="text-xl font-bold text-foreground text-right">تسجيل النوم</Text>
               <Text className="text-xs text-muted-foreground text-right mt-0.5 font-medium">
@@ -275,21 +189,20 @@ export default function SleepPage() {
 
                 <TouchableOpacity
                   onPress={handleSave}
-                  disabled={quality === null}
+                  disabled={quality === null || logSleep.isPending}
                   className={cn(
                     "w-full h-14 rounded-2xl items-center justify-center active:scale-[0.98]",
                     quality === null ? "bg-muted" : "bg-primary shadow-xl shadow-primary/20"
                   )}
                 >
-                  <Text className="text-primary-foreground font-bold text-base">حفظ السجل</Text>
+                  <Text className="text-primary-foreground font-bold text-base">
+                    {logSleep.isPending ? 'جاري الحفظ...' : 'حفظ السجل'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View className="items-center justify-center py-10">
-                <View
-                  className="h-20 w-20 items-center justify-center rounded-[28px] bg-emerald-500/10 mb-6"
-                  style={{ shadowColor: '#10b981', shadowOpacity: 0.1, shadowRadius: 20 }}
-                >
+                <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-emerald-500/10 mb-6" style={{ shadowColor: '#10b981', shadowOpacity: 0.1, shadowRadius: 20 }}>
                   <TrendingUp color="#10b981" size={40} />
                 </View>
                 <Text className="text-xl font-bold text-slate-900 mb-2">تم تسجيل نوم اليوم</Text>
