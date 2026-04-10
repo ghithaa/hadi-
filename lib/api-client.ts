@@ -1,6 +1,9 @@
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './token-storage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1').replace(/\/$/, '');
+
+// Helper to ensure endpoint has leading slash
+const normalizeEndpoint = (endpoint: string) => endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
 export class ApiClientError extends Error {
   statusCode: number;
@@ -37,7 +40,7 @@ async function refreshAccessToken(): Promise<string> {
     throw new ApiClientError(401, 'No refresh token available');
   }
 
-  const response = await fetch(`${BASE_URL}/auth/refresh`, {
+  const response = await fetch(`${BASE_URL}${normalizeEndpoint('/auth/refresh')}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -75,7 +78,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     rawResponse = false,
   } = options;
 
-  let url = `${BASE_URL}${endpoint}`;
+  let url = `${BASE_URL}${normalizeEndpoint(endpoint)}`;
 
   if (params) {
     const searchParams = new URLSearchParams();
