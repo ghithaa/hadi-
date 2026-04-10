@@ -35,11 +35,11 @@ export default function LoginScreen() {
   };
 
   const handleGoogleLogin = () => {
-    Alert.alert('قريباً', 'تسجيل الدخول عبر Google سيكون متاحاً قريباً');
+    Alert.alert(t('common.soon'), t('auth.login.googleSoon'));
   };
 
   const handleAppleLogin = () => {
-    Alert.alert('قريباً', 'تسجيل الدخول عبر Apple سيكون متاحاً قريباً');
+    Alert.alert(t('common.soon'), t('auth.login.appleSoon'));
   };
 
   return (

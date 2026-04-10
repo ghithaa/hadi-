@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { AppHeader } from '@/components/app-header';
 import { Shield, Brain, Users, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,14 @@ export default function SocietyPage() {
       bg: 'bg-blue-50',
     },
   ];
+
+  const handleJoinGroup = (groupId: string) => {
+    Alert.alert(t('common.soon'), t('society.groups.joinSoon'));
+  };
+
+  const handleEnterGroup = (groupId: string) => {
+    Alert.alert(t('common.soon'), t('society.groups.enterSoon'));
+  };
 
   return (
     <View className="flex-1 bg-background">
@@ -156,12 +164,13 @@ export default function SocietyPage() {
                     <TouchableOpacity
                       activeOpacity={0.8}
                       className="flex-1 bg-card border border-border/50 py-3.5 rounded-xl shadow-sm active:scale-[0.97]"
-                      onPress={() => console.log('Comment pressed', group.id)}
+                      onPress={() => handleJoinGroup(group.id)}
                     >
                       <Text className="text-foreground font-bold text-sm text-center">{t('society.groups.join')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       className={cn("flex-[1.5] py-3.5 rounded-xl shadow-lg shadow-black/5 active:scale-[0.97]", group.color)}
+                      onPress={() => handleEnterGroup(group.id)}
                     >
                       <Text className="text-white font-bold text-sm text-center">{t('society.groups.enter')}</Text>
                     </TouchableOpacity>

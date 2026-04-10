@@ -207,6 +207,14 @@ const translationTable: Record<Language, Translations> = {
     'profile.main.logout': 'تسجيل الخروج',
     'profile.main.version': 'الإصدار',
     'profile.main.copyright': 'جميع الحقوق محفوظة © هادي 2024',
+
+    'common.soon': 'قريباً',
+    'auth.login.googleSoon': 'تسجيل الدخول عبر Google سيكون متاحاً قريباً',
+    'auth.login.appleSoon': 'تسجيل الدخول عبر Apple سيكون متاحاً قريباً',
+    'chat.voiceSessionSoon': 'الجلسات الصوتية ستكون متاحة قريباً في نسخة هادي بلس',
+    'society.groups.joinSoon': 'الانضمام للمجموعات سيكون متاحاً قريباً',
+    'society.groups.enterSoon': 'دخول المجموعات متاح حالياً للأعضاء المسجلين فقط',
+    'profile.subscription.manageSoon': 'إدارة الاشتراكات ستكون متاحة قريباً عبر متجر التطبيقات',
   },
   en: {
     'auth.login.title': 'Welcome to Hadi',
@@ -410,6 +418,14 @@ const translationTable: Record<Language, Translations> = {
     'profile.main.logout': 'Log Out',
     'profile.main.version': 'Version',
     'profile.main.copyright': 'All rights reserved © Hadi 2024',
+
+    'common.soon': 'Coming Soon',
+    'auth.login.googleSoon': 'Login via Google will be available soon',
+    'auth.login.appleSoon': 'Login via Apple will be available soon',
+    'chat.voiceSessionSoon': 'Voice sessions will be available soon in Hadi Plus',
+    'society.groups.joinSoon': 'Joining groups will be available soon',
+    'society.groups.enterSoon': 'Entering groups is currently available for registered members only',
+    'profile.subscription.manageSoon': 'Subscription management will be available soon via the App Store',
   },
 };
 

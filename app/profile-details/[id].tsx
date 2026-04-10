@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Switch, Image, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch, Image, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -64,6 +64,7 @@ export default function ProfileDetailsPage() {
 
           <TouchableOpacity
             className="bg-card rounded-[24px] py-5 items-center shadow-lg shadow-black/[0.05] border border-border/50 active:scale-[0.98]"
+            onPress={() => Alert.alert(t('common.soon'), t('profile.subscription.manageSoon'))}
           >
             <Text className="text-primary font-bold text-base">{t('profile.subscription.manage')}</Text>
           </TouchableOpacity>

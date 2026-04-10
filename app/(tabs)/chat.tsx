@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Alert } from 'react-native';
 import { AppHeader } from '@/components/app-header';
 import { Send, Smile, Mic } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
@@ -66,6 +66,10 @@ export default function ChatPage() {
 
   const handlePromptClick = (prompt: string) => {
     setInput(prompt);
+  };
+
+  const handleVoiceSession = () => {
+    Alert.alert(t('common.soon'), t('chat.voiceSessionSoon'));
   };
 
   return (
@@ -192,6 +196,7 @@ export default function ChatPage() {
                 language === 'en' && "flex-row-reverse"
               )}
               activeOpacity={0.8}
+              onPress={handleVoiceSession}
             >
               <View className={language === 'ar' ? "mr-2" : "ml-2"}>
                 <Mic size={16} color="white" />
