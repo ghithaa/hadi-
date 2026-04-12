@@ -6,10 +6,11 @@ export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 const Input = React.forwardRef<TextInput, InputProps>(
-  ({ className, label, error, icon, ...props }, ref) => {
+  ({ className, label, error, icon, rightIcon, ...props }, ref) => {
     return (
       <View className="space-y-2">
         {label && (
@@ -29,12 +30,18 @@ const Input = React.forwardRef<TextInput, InputProps>(
               'flex h-14 w-full rounded-2xl border border-border/50 bg-secondary px-4 text-base text-foreground',
               'focus:border-primary focus:bg-background transition-all duration-200',
               icon ? 'pl-12' : '',
+              rightIcon ? 'pr-12' : '',
               error ? 'border-destructive bg-destructive/5' : '',
               className
             )}
             placeholderTextColor="#9ca3af"
             {...props}
           />
+          {rightIcon && (
+            <View className="absolute right-4 z-10 text-muted-foreground">
+              {rightIcon}
+            </View>
+          )}
         </View>
         {error && (
           <Text className="text-xs font-medium text-destructive ml-1">{error}</Text>

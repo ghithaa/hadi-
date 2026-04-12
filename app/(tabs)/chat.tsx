@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { AppHeader } from '@/components/app-header';
 import { Send, Smile, Mic } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useChatSessions, useChatMessages, useCreateSession } from '@/hooks/use-chat';
+import { chatService } from '@/services/chat.service';
 
 interface Message {
   id: string;
@@ -13,36 +16,59 @@ interface Message {
 
 export default function ChatPage() {
   const { t, language } = useLocalization();
+  
+  const { data: sessions, isLoading: isLoadingSessions } = useChatSessions();
+  const activeSessionId = sessions?.[0]?.id; // Default to first available session
+  const { data: historyMessages, isLoading: isLoadingHistory } = useChatMessages(activeSessionId);
+  const { mutateAsync: createSession } = useCreateSession();
+
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  
+  const flatListRef = useRef<FlatList>(null);
+  const opacity = useSharedValue(0.4);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value
+  }));
+
+  // Initialize messages from history
+  useEffect(() => {
+    const welcomeMsg: Message = {
+      id: 'welcome-msg',
       role: 'assistant',
       content: t('chat.welcome'),
-    },
-  ]);
-  const flatListRef = useRef<FlatList>(null);
-  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+    };
 
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.4,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [pulseAnim]);
+    if (historyMessages && historyMessages.length > 0) {
+      const formattedHistory: Message[] = historyMessages.map(msg => ({
+        id: msg.id,
+        role: msg.role.toUpperCase() === 'USER' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      setMessages([welcomeMsg, ...formattedHistory]);
+    } else if (historyMessages?.length === 0 && messages.length === 0) {
+      // Show welcome message if no history
+      setMessages([welcomeMsg]);
+    } else if (!activeSessionId && !isLoadingSessions && messages.length === 0) {
+      setMessages([welcomeMsg]);
+    }
+  }, [historyMessages, activeSessionId, isLoadingSessions]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1000 }),
+        withTiming(0.4, { duration: 1000 })
+      ),
+      -1, // infinite
+      false
+    );
+  }, []);
+
+  const handleSend = async () => {
+    if (!input.trim() || isSending) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -52,16 +78,46 @@ export default function ChatPage() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setIsSending(true);
 
-    // Simulate response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: t('chat.reply.standard'),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    try {
+      let currentSessionId = activeSessionId;
+      
+      // Auto-create session if none exists
+      if (!currentSessionId) {
+         const newSession = await createSession({ title: 'New Chat' });
+         currentSessionId = newSession.id;
+      }
+
+      const botMessageId = (Date.now() + 1).toString();
+      let currentBotContent = '';
+
+      // Add empty bot message that we will stream into
+      setMessages((prev) => [...prev, { id: botMessageId, role: 'assistant', content: '' }]);
+
+      await chatService.sendMessageStream(
+        currentSessionId,
+        { content: userMessage.content },
+        (token) => {
+          currentBotContent += token;
+          setMessages((prev) => 
+            prev.map(msg => msg.id === botMessageId ? { ...msg, content: currentBotContent } : msg)
+          );
+        },
+        () => {
+          setIsSending(false);
+        },
+        (error) => {
+          setIsSending(false);
+          setMessages((prev) => 
+            prev.map(msg => msg.id === botMessageId ? { ...msg, content: currentBotContent + "\n\n[Error: Connection interrupted]" } : msg)
+          );
+        }
+      );
+    } catch (err) {
+      setIsSending(false);
+      Alert.alert('Error', 'Failed to send message');
+    }
   };
 
   const handlePromptClick = (prompt: string) => {
@@ -134,50 +190,53 @@ export default function ChatPage() {
         />
 
         <View className="bg-background/98 border-t border-border p-5 pb-10">
-          {messages.length === 1 && (
-            <View className="mb-4">
-              <View className={cn("flex-row justify-between mb-3", language === 'en' && "flex-row-reverse")}>
-                <TouchableOpacity
-                  onPress={() => handlePromptClick(t('chat.suggested.anxiety'))}
-                  className="bg-card border border-border px-4 py-3 rounded-full flex-row items-center justify-center w-[48%]"
-                >
-                  <Text className="text-[10px] font-bold text-muted-foreground">{t('chat.suggested.anxiety')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handlePromptClick(t('chat.suggested.sleep'))}
-                  className="bg-card border border-border px-4 py-3 rounded-full flex-row items-center justify-center w-[48%]"
-                >
-                  <Text className="text-[10px] font-bold text-muted-foreground">{t('chat.suggested.sleep')}</Text>
-                </TouchableOpacity>
-              </View>
-              <View className={cn("flex-row justify-between", language === 'en' && "flex-row-reverse")}>
-                <TouchableOpacity
-                  onPress={() => handlePromptClick(t('chat.suggested.stress'))}
-                  className="bg-card border border-border px-3 py-3 rounded-full flex-row items-center justify-center w-[48%]"
-                >
-                  <Text className="text-[9px] font-bold text-muted-foreground">{t('chat.suggested.stress')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handlePromptClick(t('chat.suggested.relax'))}
-                  className="bg-card border border-border px-4 py-3 rounded-full flex-row items-center justify-center w-[48%]"
-                >
-                  <Text className="text-[10px] font-bold text-muted-foreground">{t('chat.suggested.relax')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            className="mb-4"
+            contentContainerStyle={{ gap: 10, flexDirection: language === 'en' ? 'row-reverse' : 'row' }}
+          >
+            <TouchableOpacity
+              onPress={() => handlePromptClick(t('chat.suggested.anxiety'))}
+              className="bg-card border border-border px-4 py-2.5 rounded-full flex-row items-center justify-center"
+            >
+              <Text className="text-[11px] font-bold text-muted-foreground">{t('chat.suggested.anxiety')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handlePromptClick(t('chat.suggested.sleep'))}
+              className="bg-card border border-border px-4 py-2.5 rounded-full flex-row items-center justify-center"
+            >
+              <Text className="text-[11px] font-bold text-muted-foreground">{t('chat.suggested.sleep')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handlePromptClick(t('chat.suggested.stress'))}
+              className="bg-card border border-border px-4 py-2.5 rounded-full flex-row items-center justify-center"
+            >
+              <Text className="text-[11px] font-bold text-muted-foreground">{t('chat.suggested.stress')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handlePromptClick(t('chat.suggested.relax'))}
+              className="bg-card border border-border px-4 py-2.5 rounded-full flex-row items-center justify-center"
+            >
+              <Text className="text-[11px] font-bold text-muted-foreground">{t('chat.suggested.relax')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
 
           <View className={cn("flex-row items-center bg-muted rounded-full px-5 border border-border h-14 mb-5", language === 'ar' ? "flex-row" : "flex-row-reverse")}>
             <TouchableOpacity
               onPress={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isSending}
               activeOpacity={0.8}
               className={cn(
                 "h-10 w-10 rounded-full items-center justify-center",
-                !input.trim() ? "bg-muted-foreground/20" : "bg-primary"
+                (!input.trim() || isSending) ? "bg-muted-foreground/20" : "bg-primary"
               )}
             >
-              <Send size={18} color={!input.trim() ? "#94a3b8" : "white"} style={{ transform: [{ scaleX: language === 'ar' ? 1 : -1 }] }} />
+              {isSending ? (
+                <ActivityIndicator size="small" color="#94a3b8" />
+              ) : (
+                <Send size={18} color={!input.trim() ? "#94a3b8" : "white"} style={{ transform: [{ scaleX: language === 'ar' ? 1 : -1 }] }} />
+              )}
             </TouchableOpacity>
             <TextInput
               className={cn("flex-1 text-[15px] text-foreground px-4 font-semibold", language === 'ar' ? "text-right" : "text-left")}
@@ -203,7 +262,7 @@ export default function ChatPage() {
               </View>
               <Text className={cn("text-primary-foreground text-[14px] font-bold", language === 'ar' ? "mr-3" : "ml-3")}>{t('chat.voiceSession')}</Text>
               <Animated.View
-                style={{ opacity: pulseAnim }}
+                style={[animatedStyle]}
                 className={cn("h-2 w-2 rounded-full bg-primary-foreground/90 border border-primary-foreground", language === 'ar' ? "ml-0" : "mr-0")}
               />
             </TouchableOpacity>

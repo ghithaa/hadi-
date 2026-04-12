@@ -21,7 +21,7 @@ export const config = {
   BASE_URL: required(
     process.env.EXPO_PUBLIC_BASE_URL,
     "EXPO_PUBLIC_BASE_URL",
-    "https://unit-project-server.gptmate.xyz/" // Default placeholder from Valoro projects
+    "http://34.18.213.53:3000/api/v1" // Default placeholder from Valoro projects
   ),
   DEFAULT_LOCALE: "ar",
 };

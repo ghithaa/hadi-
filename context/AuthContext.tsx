@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/auth.service';
-import { clearTokens, getRefreshToken } from '@/lib/token-storage';
+import { clearTokens, getRefreshToken, getPersistedAccessToken } from '@/lib/token-storage';
 import { queryClient } from '@/lib/react-query';
 import { User, LoginPayload, RegisterPayload } from '@/types';
 
@@ -28,11 +28,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // On mount: try to restore session via refresh token (access token is in-memory only)
+  // On mount: try to restore session
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const accessToken = await getPersistedAccessToken();
         const refreshToken = await getRefreshToken();
+
+        if (accessToken) {
+          // Verify via getMe, the apiClient handles auto-refresh if token is expired
+          try {
+            const userData = await authService.getMe();
+            setUser(userData);
+            setAuthData({ user: userData, token: accessToken });
+            return;
+          } catch (e) {
+             // Fall through to clear if network fails hard and we can't recover
+             throw e;
+          }
+        } 
+        
         if (refreshToken) {
           const response = await authService.refresh();
           setUser(response.user);

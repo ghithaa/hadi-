@@ -36,3 +36,11 @@ export function useDeleteSession() {
     },
   });
 }
+
+export function useChatMessages(sessionId: string | undefined) {
+  return useQuery({
+    queryKey: ['chat', 'session', sessionId, 'messages'],
+    queryFn: () => chatService.getMessages(sessionId!),
+    enabled: !!sessionId,
+  });
+}
