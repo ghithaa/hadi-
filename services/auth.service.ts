@@ -12,28 +12,38 @@ import {
 
 export const authService = {
   async register(data: RegisterPayload): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/register', {
+    const response = await apiClient.post<any>('/auth/register', {
       email: data.email,
       password: data.password,
       fullName: data.fullName,
       phone: data.phone,
     }, { skipAuth: true });
-    await setTokens(response.accessToken, response.refreshToken);
-    return response;
+    
+    const accessToken = response.accessToken || response.token;
+    if (accessToken) {
+      await setTokens(accessToken, response.refreshToken);
+    }
+    return { ...response, accessToken };
   },
 
   async login(data: LoginPayload): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/login', data, { skipAuth: true });
-    await setTokens(response.accessToken, response.refreshToken);
-    return response;
+    const response = await apiClient.post<any>('/auth/login', data, { skipAuth: true });
+    const accessToken = response.accessToken || response.token;
+    if (accessToken) {
+      await setTokens(accessToken, response.refreshToken);
+    }
+    return { ...response, accessToken };
   },
 
   async refresh(): Promise<AuthResponse> {
     const refreshToken = await getRefreshToken();
     if (!refreshToken) throw new Error('No refresh token available');
-    const response = await apiClient.post<AuthResponse>('/auth/refresh', { refreshToken }, { skipAuth: true });
-    await setTokens(response.accessToken, response.refreshToken);
-    return response;
+    const response = await apiClient.post<any>('/auth/refresh', { refreshToken }, { skipAuth: true });
+    const accessToken = response.accessToken || response.token;
+    if (accessToken) {
+      await setTokens(accessToken, response.refreshToken);
+    }
+    return { ...response, accessToken };
   },
 
   async logout(): Promise<void> {
@@ -69,8 +79,11 @@ export const authService = {
   },
 
   async googleLogin(idToken: string): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/google', { idToken }, { skipAuth: true });
-    await setTokens(response.accessToken, response.refreshToken);
-    return response;
+    const response = await apiClient.post<any>('/auth/google', { idToken }, { skipAuth: true });
+    const accessToken = response.accessToken || response.token;
+    if (accessToken) {
+      await setTokens(accessToken, response.refreshToken);
+    }
+    return { ...response, accessToken };
   },
 };

@@ -1,19 +1,24 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { AppHeader } from '@/components/app-header';
 import { Smile, Wind, ClipboardList, Calendar, Sparkles, TrendingUp, Info } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useLocalization } from '@/context/LocalizationContext';
-import { useReportOverview } from '@/hooks/use-reports';
+import { useReportOverview, useMoodTrends } from '@/hooks/use-reports';
 import { useBreathingStats } from '@/hooks/use-breathing';
 import { useAssessmentHistory } from '@/hooks/use-assessments';
+import { useSleepChart } from '@/hooks/use-sleep';
+import { LineChart, BarChart } from 'react-native-chart-kit';
 
 export default function InsightsPage() {
-  const { t, language } = useLocalization();
-  const { data: overview } = useReportOverview();
+  const { t, language, isRTL, flexDir, textAlign, alignItems, justifyContent, l, r } = useLocalization();
+  const { data: overview, isLoading: overviewLoading } = useReportOverview();
   const { data: breathingStats } = useBreathingStats();
   const { data: assessmentHistory } = useAssessmentHistory();
+
+  const { data: moodTrends, isLoading: moodLoading } = useMoodTrends();
+  const { data: sleepChart, isLoading: sleepLoading } = useSleepChart();
 
   const stats = [
     {
@@ -46,50 +51,169 @@ export default function InsightsPage() {
     },
   ];
 
+  const defaultLabels = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  });
+
+  const moodData = moodTrends && moodTrends.length > 0
+    ? {
+      labels: moodTrends.slice(-7).map((t) => {
+        const d = new Date(t.date);
+        return `${d.getDate()}/${d.getMonth() + 1}`;
+      }),
+      datasets: [
+        { data: moodTrends.slice(-7).map((t) => t.score) },
+        { data: [5], withDots: false, color: () => 'transparent' } // Force max scale to 5
+      ],
+    }
+    : {
+      labels: defaultLabels,
+      datasets: [
+        { data: [0, 0, 0, 0, 0, 0, 0] },
+        { data: [5], withDots: false, color: () => 'transparent' }
+      ],
+    };
+
+  const sleepData = sleepChart && (sleepChart.data?.length ?? 0) > 0
+    ? {
+      labels: sleepChart.labels.slice(-7).map(dateStr => {
+        const d = new Date(dateStr);
+        return `${d.getDate()}/${d.getMonth() + 1}`;
+      }),
+      datasets: [
+        { data: sleepChart.data.slice(-7) },
+        { data: [12], withDots: false, color: () => 'transparent' } // Force max scale to 12
+      ]
+    }
+    : {
+      labels: defaultLabels,
+      datasets: [
+        { data: [0, 0, 0, 0, 0, 0, 0] },
+        { data: [12], withDots: false, color: () => 'transparent' }
+      ]
+    };
+
+  const chartConfigBase = {
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientTo: '#ffffff',
+    backgroundGradientToOpacity: 0,
+    decimalPlaces: 0,
+    labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`, // slate-500
+    propsForLabels: { fontSize: 10, fontWeight: 'bold' },
+    style: { borderRadius: 16 },
+  };
+
+  const screenWidth = Dimensions.get('window').width;
+
   return (
     <View className="flex-1 bg-background">
       <AppHeader />
-      <ScrollView className="flex-1 px-5 py-6" showsVerticalScrollIndicator={false}>
-        <View className={cn("mb-8", language === 'ar' ? "items-end" : "items-start")}>
-          <View className={cn("flex-row items-center gap-2 mb-1", language === 'en' && "flex-row-reverse")}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        <View className={cn("mb-8", alignItems('start'))}>
+          <View className={cn("items-center gap-2 mb-1", flexDir())}>
             <Text className="text-3xl font-bold text-foreground tracking-tight">{t('insights.title')}</Text>
             <TrendingUp size={28} color="#0284c7" />
           </View>
-          <Text className={cn("text-muted-foreground font-medium", language === 'ar' ? "text-right" : "text-left")}>{t('insights.subtitle')}</Text>
+          <Text className={cn("text-muted-foreground font-medium", textAlign())}>{t('insights.subtitle')}</Text>
         </View>
 
-        <View className={cn("flex-row flex-wrap justify-between gap-y-4 mb-8", language === 'en' && "flex-row-reverse")}>
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="w-[48%] border-none shadow-sm shadow-black/5 rounded-[32px] overflow-hidden">
-                <CardContent className={cn("p-5 justify-center", language === 'ar' ? "items-end" : "items-start")}>
-                  <View className={cn("h-12 w-12 rounded-2xl items-center justify-center mb-4", stat.bg)}>
-                    <Icon size={24} color={stat.color} />
-                  </View>
-                  <Text className="text-2xl font-bold text-foreground mb-1">{stat.value}</Text>
-                  <Text className="text-[11px] font-bold text-muted-foreground/80 lowercase">{stat.label}</Text>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </View>
+        {overviewLoading ? (
+          <View className="h-40 items-center justify-center">
+            <ActivityIndicator size="large" color="#0f766e" />
+          </View>
+        ) : (
+          <View className={cn("flex-wrap gap-y-4 mb-8", flexDir(), justifyContent('between'))}>
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="w-[48%] border-none shadow-sm shadow-black/5 rounded-[32px] overflow-hidden">
+                  <CardContent className={cn("p-5 justify-center", alignItems('start'))}>
+                    <View className={cn("h-12 w-12 rounded-2xl items-center justify-center mb-4", stat.bg)}>
+                      <Icon size={24} color={stat.color} />
+                    </View>
+                    <Text className="text-2xl font-bold text-foreground mb-1">{stat.value}</Text>
+                    <Text className="text-[11px] font-bold text-muted-foreground/80 lowercase">{stat.label}</Text>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </View>
+        )}
 
         <Card className="border-none shadow-md shadow-black/5 rounded-[40px] mb-8 overflow-hidden bg-white dark:bg-card">
-          <CardHeader className={cn("pb-2 pt-6 px-6", language === 'ar' ? "items-end" : "items-start")}>
+          <CardHeader className={cn("pb-0 pt-6 px-6", alignItems('start'))}>
             <CardTitle className="text-xl font-bold text-foreground">{t('insights.chart.title')}</CardTitle>
-            <CardDescription className={cn("mt-1", language === 'ar' ? "text-right" : "text-left")}>{t('insights.chart.desc')}</CardDescription>
+            <CardDescription className={cn("mt-1", textAlign())}>{t('insights.chart.desc')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <View className="h-56 items-center justify-center bg-secondary/20 rounded-[32px] border border-dashed border-secondary-foreground/10">
-              <View className="bg-background h-16 w-16 rounded-full items-center justify-center mb-4 shadow-sm">
-                <Sparkles size={32} color="#94a3b8" />
+          <CardContent className="p-0 pt-4 pb-4">
+            {moodLoading ? (
+              <View className="h-56 items-center justify-center">
+                <ActivityIndicator size="small" color="#0f766e" />
               </View>
-              <Text className="text-foreground font-bold text-lg">{t('insights.empty.title')}</Text>
-              <Text className="text-sm text-muted-foreground/70 mt-1 max-w-[200px] text-center">
-                {t('insights.empty.desc')}
-              </Text>
-            </View>
+            ) : (
+              <View className="items-center w-full">
+                <LineChart
+                  data={moodData}
+                  width={screenWidth - 40} // padding from screen edges
+                  height={220}
+                  chartConfig={{
+                    ...chartConfigBase,
+                    color: (opacity = 1) => `rgba(14, 118, 110, ${opacity})`, // teal-700
+                    propsForDots: { r: "5", strokeWidth: "2", stroke: "#0f766e" },
+                  }}
+                  bezier
+                  fromZero={true}
+                  segments={5}
+                  withVerticalLines={false}
+                  withHorizontalLines={true}
+                  style={{
+                    marginVertical: 8,
+                    borderRadius: 16,
+                    paddingRight: 20, // Extra padding for labels
+                  }}
+                />
+              </View>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-md shadow-black/5 rounded-[40px] mb-8 overflow-hidden bg-white dark:bg-card">
+          <CardHeader className={cn("pb-0 pt-6 px-6", alignItems('start'))}>
+            <CardTitle className="text-xl font-bold text-foreground">{t('insights.chart.sleep.title')}</CardTitle>
+            <CardDescription className={cn("mt-1", textAlign())}>{t('insights.chart.sleep.desc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 pt-4 pb-4">
+            {sleepLoading ? (
+              <View className="h-56 items-center justify-center">
+                <ActivityIndicator size="small" color="#3b82f6" />
+              </View>
+            ) : (
+              <View className="items-center w-full">
+                <BarChart
+                  data={sleepData}
+                  width={screenWidth - 40}
+                  height={220}
+                  yAxisLabel=""
+                  yAxisSuffix="h"
+                  fromZero={true}
+                  segments={4}
+                  chartConfig={{
+                    ...chartConfigBase,
+                    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`, // blue-500
+                  }}
+                  style={{
+                    marginVertical: 8,
+                    borderRadius: 16,
+                    paddingRight: 20,
+                  }}
+                  showValuesOnTopOfBars
+                  withInnerLines={true}
+                />
+              </View>
+            )}
           </CardContent>
         </Card>
 
@@ -97,10 +221,10 @@ export default function InsightsPage() {
           <View className="relative overflow-hidden rounded-[36px] bg-primary p-7 shadow-xl shadow-primary/20">
             <View className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
             <View className="absolute -left-5 -bottom-5 h-24 w-24 rounded-full bg-white/5" />
-            <View className={cn("flex-row items-center gap-5", language === 'en' && "flex-row-reverse")}>
-              <View className={cn("flex-1", language === 'ar' ? "items-end" : "items-start")}>
-                <Text className={cn("text-white text-xl font-bold mb-2", language === 'ar' ? "text-right" : "text-left")}>{t('insights.premium.title')}</Text>
-                <Text className={cn("text-white/80 text-[13px] font-medium leading-5", language === 'ar' ? "text-right" : "text-left")}>
+            <View className={cn("items-center gap-5", flexDir())}>
+              <View className={cn("flex-1", alignItems('start'))}>
+                <Text className={cn("text-white text-xl font-bold mb-2", textAlign())}>{t('insights.premium.title')}</Text>
+                <Text className={cn("text-white/80 text-[13px] font-medium leading-5", textAlign())}>
                   {t('insights.premium.desc')}
                 </Text>
               </View>
@@ -111,7 +235,7 @@ export default function InsightsPage() {
           </View>
         </TouchableOpacity>
 
-        <View className={cn("flex-row items-center justify-center gap-2 mb-12 opacity-40", language === 'en' && "flex-row-reverse")}>
+        <View className={cn("items-center justify-center gap-2 mb-12 opacity-40", flexDir())}>
           <Text className="text-[10px] text-muted-foreground font-bold">{t('insights.footer.info')}</Text>
           <Info size={12} color="gray" />
         </View>

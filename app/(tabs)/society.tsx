@@ -15,7 +15,7 @@ interface CommunityGroup {
 }
 
 export default function SocietyPage() {
-  const { t, language } = useLocalization();
+  const { t, language, isRTL, flexDir, textAlign, alignItems, justifyContent, l, r } = useLocalization();
 
   const groups: CommunityGroup[] = [
     {
@@ -76,31 +76,31 @@ export default function SocietyPage() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 60 }}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {/* Header Section */}
         <View className="px-6 py-6 mb-1">
-          <View className={cn("flex-row justify-between items-center mb-4", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
-            <View className={language === 'ar' ? "items-end" : "items-start"}>
-              <Text className={cn("text-2xl font-bold text-foreground", language === 'ar' ? "text-right" : "text-left")}>{t('society.title')}</Text>
-              <Text className={cn("text-muted-foreground text-sm mt-0.5", language === 'ar' ? "text-right" : "text-left")}>{t('society.subtitle')}</Text>
+          <View className={cn("items-center mb-4", flexDir(), justifyContent('between'))}>
+            <View className={alignItems('start')}>
+              <Text className={cn("text-2xl font-bold text-foreground", textAlign())}>{t('society.title')}</Text>
+              <Text className={cn("text-muted-foreground text-sm mt-0.5", textAlign())}>{t('society.subtitle')}</Text>
             </View>
-            <TouchableOpacity className={cn("flex-row items-center bg-card px-3 py-1.5 rounded-full border border-border shadow-sm shadow-black/5", language === 'ar' ? "flex-row" : "flex-row-reverse")}>
+            <TouchableOpacity className={cn("items-center bg-card px-3 py-1.5 rounded-full border border-border shadow-sm shadow-black/5", flexDir())}>
               <Shield size={16} color="#007AFF" />
-              <Text className={cn("text-primary text-[10px] font-bold uppercase tracking-wider", language === 'ar' ? "ml-2" : "mr-2")}>{t('society.guidelines')}</Text>
+              <Text className={cn("text-primary text-[10px] font-bold uppercase tracking-wider", isRTL ? "mr-2" : "ml-2")}>{t('society.guidelines')}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Safety Banner - Redesigned */}
         <View className="px-7 mb-8">
-          <View className={cn("bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-100/40 dark:border-emerald-800/20 rounded-[20px] p-5 flex-row items-center gap-4 shadow-sm shadow-emerald-900/5", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
+          <View className={cn("bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-100/40 dark:border-emerald-800/20 rounded-[20px] p-5 items-center gap-4 shadow-sm shadow-emerald-900/5", flexDir())}>
             <View className="h-10 w-10 rounded-xl bg-card items-center justify-center shadow-sm shadow-emerald-900/10">
               <Shield size={20} color="#059669" />
             </View>
-            <View className={cn("flex-1", language === 'ar' ? "items-end" : "items-start")}>
-              <Text className={cn("font-bold text-emerald-900 dark:text-emerald-100 text-[16px] mb-1", language === 'ar' ? "text-right" : "text-left")}>{t('society.safety.title')}</Text>
-              <Text className={cn("text-emerald-800/60 dark:text-emerald-200/60 text-xs leading-5", language === 'ar' ? "text-right" : "text-left")}>
+            <View className={cn("flex-1", alignItems('start'))}>
+              <Text className={cn("font-bold text-emerald-900 dark:text-emerald-100 text-[16px] mb-1", textAlign())}>{t('society.safety.title')}</Text>
+              <Text className={cn("text-emerald-800/60 dark:text-emerald-200/60 text-xs leading-5", textAlign())}>
                 {t('society.safety.desc')}
               </Text>
             </View>
@@ -109,7 +109,7 @@ export default function SocietyPage() {
 
         {/* Groups List */}
         <View className="px-6">
-          <View className={cn("flex-row items-center justify-between mb-6 px-1", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
+          <View className={cn("items-center justify-between mb-6 px-1", flexDir())}>
             <Text className="text-xl font-bold text-foreground">{t('society.groups.title')}</Text>
             <TouchableOpacity>
               <Text className="text-primary text-sm font-bold">{t('society.groups.viewAll')}</Text>
@@ -133,24 +133,24 @@ export default function SocietyPage() {
                   <View className="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-white/5" />
                   <View className="absolute inset-0 bg-background/20" />
 
-                  <View className={cn("flex-row items-start justify-between mb-5", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
+                  <View className={cn("items-start justify-between mb-5", flexDir())}>
                     <View className={cn("h-14 w-14 rounded-[20px] items-center justify-center shadow-xl shadow-black/5", group.color)}>
                       <Icon size={28} color="white" />
                     </View>
-                    <View className={cn("flex-1", language === 'ar' ? "mr-4 items-end" : "ml-4 items-start")}>
-                      <View className={cn("flex-row items-center gap-2 mb-2", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
-                        <Text className={cn("text-xl font-bold text-foreground", language === 'ar' ? "text-right" : "text-left")}>
+                    <View className={cn("flex-1", isRTL ? "mr-4" : "ml-4", alignItems('start'))}>
+                      <View className={cn("items-center gap-2 mb-2", flexDir())}>
+                        <Text className={cn("text-xl font-bold text-foreground", textAlign())}>
                           {group.title}
                         </Text>
                         <View className="bg-card/80 px-2 py-0.5 rounded-full border border-border">
                           <Text className="text-[10px] text-muted-foreground font-bold tracking-wide uppercase">{t('society.groups.active')}</Text>
                         </View>
                       </View>
-                      <Text className={cn("text-sm text-muted-foreground leading-6 mb-3 font-medium", language === 'ar' ? "text-right" : "text-left")}>
+                      <Text className={cn("text-sm text-muted-foreground leading-6 mb-3 font-medium", textAlign())}>
                         {group.description}
                       </Text>
-                      <View className={cn("flex-row items-center gap-3", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
-                        <View className={cn("flex-row items-center gap-1.5", language === 'ar' ? "flex-row-reverse" : "flex-row")}>
+                      <View className={cn("items-center gap-3", flexDir())}>
+                        <View className={cn("items-center gap-1.5", flexDir())}>
                           <Users size={12} className="text-muted-foreground" />
                           <Text className="text-[12px] text-muted-foreground font-bold">1.2k {t('society.groups.members')}</Text>
                         </View>
@@ -160,7 +160,7 @@ export default function SocietyPage() {
                     </View>
                   </View>
 
-                  <View className={cn("flex-row gap-3 pt-1", language === 'en' && "flex-row-reverse")}>
+                  <View className={cn("gap-3 pt-1", flexDir())}>
                     <TouchableOpacity
                       activeOpacity={0.8}
                       className="flex-1 bg-card border border-border/50 py-3.5 rounded-xl shadow-sm active:scale-[0.97]"

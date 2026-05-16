@@ -63,7 +63,11 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['System', 'sans-serif'],
+        sans: ["Cairo-Regular", "System", "sans-serif"],
+        "Cairo-Bold": ["Cairo-Bold"],
+        "Cairo-Medium": ["Cairo-Medium"],
+        "Cairo-SemiBold": ["Cairo-SemiBold"],
+        "Cairo-Light": ["Cairo-Light"],
       },
       borderRadius: {
         lg: 'var(--radius)',

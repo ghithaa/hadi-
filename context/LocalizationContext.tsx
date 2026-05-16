@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { I18nManager, NativeModules } from 'react-native';
 
 type Language = 'ar' | 'en';
 
@@ -30,6 +31,8 @@ const translationTable: Record<Language, Translations> = {
     'auth.signup.passwordPlaceholder': '٨ أحرف على الأقل',
     'auth.signup.confirmPasswordLabel': 'تأكيد كلمة المرور',
     'auth.signup.confirmPasswordPlaceholder': 'أعد إدخال كلمة المرور',
+    'auth.signup.fullNameLabel': 'الاسم الكامل',
+    'auth.signup.fullNamePlaceholder': 'أدخل اسمك الكامل',
     'auth.signup.button': 'إنشاء الحساب',
     'auth.signup.backToLogin': 'العودة لتسجيل الدخول',
 
@@ -42,7 +45,7 @@ const translationTable: Record<Language, Translations> = {
     'tabs.profile': 'الملف الشخصي',
 
     'header.app.title': 'هادي',
-    'header.app.subtitle': 'Hadi',
+    'header.app.subtitle': 'Hadee',
 
     'home.section.title': 'ماذا تريد أن تفعل؟',
     'home.card.journeys': 'الرحلات العلاجية',
@@ -91,6 +94,9 @@ const translationTable: Record<Language, Translations> = {
     'chat.suggested.sleep': 'لا أستطيع النوم جيداً 😴',
     'chat.suggested.stress': 'أحتاج نصيحة للتعامل مع الضغوط 🧘',
     'chat.suggested.relax': 'أريد تمارين استرخاء 🕯️',
+    'chat.history': 'سجل المحادثات',
+    'chat.newChat': 'محادثة جديدة',
+    'chat.noHistory': 'لا توجد محادثات سابقة',
 
     'insights.title': 'تقاريرك',
     'insights.subtitle': 'نظرة شاملة ومفصلة على رحلتك النفسية',
@@ -103,6 +109,8 @@ const translationTable: Record<Language, Translations> = {
     'insights.stat.daySuffix': 'يوم',
     'insights.chart.title': 'مزاجك هذا الأسبوع',
     'insights.chart.desc': 'تتبع تقلبات حالتك النفسية خلال الـ 7 أيام الماضية',
+    'insights.chart.sleep.title': 'جودة النوم',
+    'insights.chart.sleep.desc': 'معدل ساعات وجودة نومك الأسبوعي',
     'insights.empty.title': 'لا توجد بيانات كافية',
     'insights.empty.desc': 'سجل حالتك اليومية لنتمكن من تزويدك برسم بياني دقيق',
     'insights.premium.title': 'فعل التقارير المتقدمة',
@@ -209,6 +217,11 @@ const translationTable: Record<Language, Translations> = {
     'profile.main.copyright': 'جميع الحقوق محفوظة © هادي 2024',
 
     'common.soon': 'قريباً',
+    'common.error': 'خطأ',
+    'auth.signup.error.fullName': 'يرجى إدخال الاسم الكامل',
+    'auth.signup.error.email': 'يرجى إدخال البريد الإلكتروني',
+    'auth.signup.error.passwordLength': 'كلمة المرور يجب أن تكون ٨ أحرف على الأقل',
+    'auth.signup.error.passwordMismatch': 'كلمة المرور غير متطابقة',
     'auth.login.googleSoon': 'تسجيل الدخول عبر Google سيكون متاحاً قريباً',
     'auth.login.appleSoon': 'تسجيل الدخول عبر Apple سيكون متاحاً قريباً',
     'chat.voiceSessionSoon': 'الجلسات الصوتية ستكون متاحة قريباً في نسخة هادي بلس',
@@ -217,7 +230,7 @@ const translationTable: Record<Language, Translations> = {
     'profile.subscription.manageSoon': 'إدارة الاشتراكات ستكون متاحة قريباً عبر متجر التطبيقات',
   },
   en: {
-    'auth.login.title': 'Welcome to Hadi',
+    'auth.login.title': 'Welcome to Hadee',
     'auth.login.subtitle': 'Sign in to continue',
     'auth.login.emailLabel': 'Email',
     'auth.login.emailPlaceholder': 'you@example.com',
@@ -229,11 +242,11 @@ const translationTable: Record<Language, Translations> = {
     'auth.login.noAccount': "Don't have an account?",
     'auth.login.signupLink': 'Sign up',
 
-    'intro.title': 'Welcome to Hadi',
+    'intro.title': 'Welcome to Hadee',
     'intro.subtitle': 'Your mental health companion',
     'intro.button': 'Get Started',
 
-    'auth.signup.title': 'Welcome to Hadi',
+    'auth.signup.title': 'Welcome to Hadee',
     'auth.signup.subtitle': 'Create your account',
     'auth.signup.emailLabel': 'Email',
     'auth.signup.emailPlaceholder': 'you@example.com',
@@ -241,26 +254,28 @@ const translationTable: Record<Language, Translations> = {
     'auth.signup.passwordPlaceholder': 'Min. 8 characters',
     'auth.signup.confirmPasswordLabel': 'Confirm Password',
     'auth.signup.confirmPasswordPlaceholder': 'Re-enter password',
+    'auth.signup.fullNameLabel': 'Full Name',
+    'auth.signup.fullNamePlaceholder': 'Enter your full name',
     'auth.signup.button': 'Create account',
     'auth.signup.backToLogin': 'Back to sign in',
 
     'tabs.home': 'Home',
-    'tabs.chat': 'Hadi',
+    'tabs.chat': 'Hadee',
     'tabs.mood': 'Mood',
     'tabs.insights': 'Insights',
     'tabs.assessments': 'Assessments',
     'tabs.society': 'Society',
     'tabs.profile': 'Profile',
 
-    'header.app.title': 'Hadi',
-    'header.app.subtitle': 'Your mental health companion',
+    'header.app.title': 'Hadee',
+    'header.app.subtitle': 'Hadee',
 
     'home.section.title': 'What do you want to do?',
     'home.card.journeys': 'Therapeutic Journeys',
     'home.card.journeys.desc': 'Guided programs',
     'home.card.plan': 'My Personalized Plan',
     'home.card.plan.desc': 'Smart plan for you',
-    'home.card.chat': 'Talk with Hadi',
+    'home.card.chat': 'Talk with Hadee',
     'home.card.chat.desc': 'The smart therapist',
     'home.card.breathing': 'Breathing Exercises',
     'home.card.breathing.desc': 'Instant relaxation',
@@ -282,11 +297,11 @@ const translationTable: Record<Language, Translations> = {
     'home.card.emergency.desc': 'Mental health emergency numbers',
     'home.card.reports.desc': 'Detailed reports about your condition',
     'home.hero.badge': 'First Saudi AI Mental Health App',
-    'home.hero.button': 'Start conversation with Hadi',
+    'home.hero.button': 'Start conversation with Hadee',
     'home.services.main': 'Main Services',
     'home.services.more': 'Additional Services',
 
-    'chat.welcome': 'Welcome! I am Hadi, your smart virtual therapist ❤️\n\nI am here to listen to you and help you understand your feelings. Everything we share stays confidential and secure.\n\nHow are you today? And what would you like to talk about?',
+    'chat.welcome': 'Welcome! I am Hadee, your smart virtual therapist ❤️\n\nI am here to listen to you and help you understand your feelings. Everything we share stays confidential and secure.\n\nHow are you today? And what would you like to talk about?',
     'chat.placeholder': 'Type your message here...',
     'chat.voiceSession': 'Voice Session',
     'chat.reply.standard': 'I understand what you are going through. Can you tell me more about it?',
@@ -302,6 +317,9 @@ const translationTable: Record<Language, Translations> = {
     'chat.suggested.sleep': "I can't sleep well 😴",
     'chat.suggested.stress': 'I need advice for dealing with stress 🧘',
     'chat.suggested.relax': 'I want relaxation exercises 🕯️',
+    'chat.history': 'Chat History',
+    'chat.newChat': 'New Chat',
+    'chat.noHistory': 'No past sessions found.',
 
     'insights.title': 'Your Reports',
     'insights.subtitle': 'Comprehensive and detailed look at your psychological journey',
@@ -314,10 +332,12 @@ const translationTable: Record<Language, Translations> = {
     'insights.stat.daySuffix': 'days',
     'insights.chart.title': 'Your Mood This Week',
     'insights.chart.desc': 'Track your mood fluctuations over the past 7 days',
+    'insights.chart.sleep.title': 'Sleep Quality',
+    'insights.chart.sleep.desc': 'Your weekly sleep hours and quality average',
     'insights.empty.title': 'Not enough data',
     'insights.empty.desc': 'Log your daily status so we can provide you with an accurate chart',
     'insights.premium.title': 'Enable Advanced Reports',
-    'insights.premium.desc': 'Get deep analytics and personalized recommendations from Hadi based on your lifestyle',
+    'insights.premium.desc': 'Get deep analytics and personalized recommendations from Hadee based on your lifestyle',
     'insights.footer.info': 'This data is updated in real-time',
 
     'society.title': 'Society',
@@ -352,7 +372,7 @@ const translationTable: Record<Language, Translations> = {
     'profile.subscription.features': 'Your Plan Features',
     'profile.subscription.feature1': 'Unlimited access to all exercises',
     'profile.subscription.feature2': 'Advanced mood analytics',
-    'profile.subscription.feature3': 'Unlimited counseling sessions with Hadi',
+    'profile.subscription.feature3': 'Unlimited counseling sessions with Hadee',
 
     'profile.settings.title': 'Account Settings',
     'profile.settings.editProfile': 'Edit Profile',
@@ -395,34 +415,39 @@ const translationTable: Record<Language, Translations> = {
 
     'profile.terms.title': 'Terms & Conditions',
     'profile.terms.header': 'Terms of Use',
-    'profile.terms.intro': 'Welcome to Hadi. By using this application, you agree to abide by the following terms and conditions...',
+    'profile.terms.intro': 'Welcome to Hadee. By using this application, you agree to abide by the following terms and conditions...',
     'profile.terms.section1': '1. Acceptable Use',
     'profile.terms.desc1': 'The application must be used for personal purposes only. It is prohibited to use the application for any commercial or illegal purposes...',
     'profile.terms.section2': '2. Intellectual Property',
-    'profile.terms.desc2': 'All rights reserved to Hadi. No part of the application may be copied or distributed without written permission...',
+    'profile.terms.desc2': 'All rights reserved to Hadee. No part of the application may be copied or distributed without written permission...',
 
-    'profile.about.title': 'About Hadi',
+    'profile.about.title': 'About Hadee',
     'profile.about.subtitle': 'Your smart mental health companion',
     'profile.about.version': 'Version',
-    'profile.about.desc': 'Hadi is a Saudi application aimed at promoting mental health and quality of life by providing smart tools and reliable content that helps you understand your feelings and improve your lifestyle.',
+    'profile.about.desc': 'Hadee is a Saudi application aimed at promoting mental health and quality of life by providing smart tools and reliable content that helps you understand your feelings and improve your lifestyle.',
     'profile.details.notFound': 'Section not found',
     'profile.details.back': 'Back',
 
-    'profile.main.guestName': 'Hadi Guest',
+    'profile.main.guestName': 'Hadee Guest',
     'profile.main.groupAccount': 'Account & Subscriptions',
     'profile.main.groupPrefs': 'Preferences',
     'profile.main.groupSupport': 'Support & Info',
     'profile.main.bannerBadge': 'Limited Offer',
-    'profile.main.bannerTitle': 'Upgrade to Hadi Plus',
+    'profile.main.bannerTitle': 'Upgrade to Hadee Plus',
     'profile.main.bannerDesc': 'Get unlimited access to all features and exclusive services',
     'profile.main.logout': 'Log Out',
     'profile.main.version': 'Version',
-    'profile.main.copyright': 'All rights reserved © Hadi 2024',
+    'profile.main.copyright': 'All rights reserved © Hadee 2024',
 
     'common.soon': 'Coming Soon',
+    'common.error': 'Error',
+    'auth.signup.error.fullName': 'Please enter full name',
+    'auth.signup.error.email': 'Please enter email',
+    'auth.signup.error.passwordLength': 'Password must be at least 8 characters',
+    'auth.signup.error.passwordMismatch': 'Passwords do not match',
     'auth.login.googleSoon': 'Login via Google will be available soon',
     'auth.login.appleSoon': 'Login via Apple will be available soon',
-    'chat.voiceSessionSoon': 'Voice sessions will be available soon in Hadi Plus',
+    'chat.voiceSessionSoon': 'Voice sessions will be available soon in Hadee Plus',
     'society.groups.joinSoon': 'Joining groups will be available soon',
     'society.groups.enterSoon': 'Entering groups is currently available for registered members only',
     'profile.subscription.manageSoon': 'Subscription management will be available soon via the App Store',
@@ -431,8 +456,19 @@ const translationTable: Record<Language, Translations> = {
 
 type LocalizationContextValue = {
   language: Language;
+  isRTL: boolean;
   setLanguage: (language: Language) => void;
   t: (key: string) => string;
+  flexDir: (base?: 'row' | 'col') => string;
+  textAlign: (base?: 'left' | 'right') => string;
+  alignItems: (base?: 'start' | 'end' | 'center') => string;
+  alignSelf: (base?: 'start' | 'end' | 'center' | 'auto') => string;
+  justifyContent: (base?: 'start' | 'end' | 'center' | 'between') => string;
+  isSystemRTL: boolean;
+  l: string; // 'left' or 'right' based on app RTL
+  r: string; // 'right' or 'left' based on app RTL
+  s: string; // 'start' or 'end' based on system/app mismatch
+  e: string; // 'end' or 'start' based on system/app mismatch
 };
 
 const LocalizationContext = createContext<LocalizationContextValue | undefined>(undefined);
@@ -443,17 +479,65 @@ type Props = {
 
 export function LocalizationProvider({ children }: Props) {
   const [language, setLanguage] = useState<Language>('ar');
+  const isSystemRTL = I18nManager.isRTL;
+  const isAppRTL = language === 'ar';
+
+  const toggleLanguage = async (newLang: Language) => {
+    setLanguage(newLang);
+  };
 
   const value = useMemo(
-    () => ({
-      language,
-      setLanguage,
-      t: (key: string) => {
-        const table = translationTable[language];
-        return table[key] ?? key;
-      },
-    }),
-    [language]
+    () => {
+      // If app wants RTL but system is LTR OR app wants LTR but system is RTL -> we need to manually flip
+      const shouldFlip = isAppRTL !== isSystemRTL;
+
+      return {
+        language,
+        isRTL: isAppRTL,
+        isSystemRTL,
+        setLanguage: toggleLanguage,
+        t: (key: string) => {
+          const table = translationTable[language];
+          return table[key] ?? key;
+        },
+        // Physical sides based on App RTL
+        l: isAppRTL ? 'right' : 'left',
+        r: isAppRTL ? 'left' : 'right',
+        // Logical sides based on System/App mismatch
+        // Use these for items-*, self-*, justify-*
+        s: shouldFlip ? 'end' : 'start',
+        e: shouldFlip ? 'start' : 'end',
+
+        flexDir: (base: 'row' | 'col' = 'row') => {
+          if (base === 'col') return 'flex-col';
+          return shouldFlip ? 'flex-row-reverse' : 'flex-row';
+        },
+        textAlign: (base: 'left' | 'right' = 'left') => {
+          if (base === 'left') {
+            return isAppRTL ? 'text-right' : 'text-left';
+          }
+          return isAppRTL ? 'text-left' : 'text-right';
+        },
+        alignItems: (base: 'start' | 'end' | 'center' = 'start') => {
+           if (base === 'center') return 'items-center';
+           if (base === 'start') return shouldFlip ? 'items-end' : 'items-start';
+           return shouldFlip ? 'items-start' : 'items-end';
+         },
+         alignSelf: (base: 'start' | 'end' | 'center' | 'auto' = 'auto') => {
+           if (base === 'center') return 'self-center';
+           if (base === 'auto') return 'self-auto';
+           if (base === 'start') return shouldFlip ? 'self-end' : 'self-start';
+           return shouldFlip ? 'self-start' : 'self-end';
+         },
+         justifyContent: (base: 'start' | 'end' | 'center' | 'between' = 'start') => {
+          if (base === 'center') return 'justify-center';
+          if (base === 'between') return 'justify-between';
+          if (base === 'start') return shouldFlip ? 'justify-end' : 'justify-start';
+          return shouldFlip ? 'justify-start' : 'justify-end';
+        },
+      };
+    },
+    [language, isAppRTL, isSystemRTL]
   );
 
   return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;
@@ -466,4 +550,3 @@ export function useLocalization() {
   }
   return ctx;
 }
-

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/auth.service';
-import { clearTokens, getRefreshToken, getPersistedAccessToken } from '@/lib/token-storage';
+import { clearTokens, getRefreshToken, getPersistedAccessToken, getPersistedUser, setPersistedUser } from '@/lib/token-storage';
 import { queryClient } from '@/lib/react-query';
 import { User, LoginPayload, RegisterPayload } from '@/types';
 
@@ -34,17 +34,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const accessToken = await getPersistedAccessToken();
         const refreshToken = await getRefreshToken();
+        const persistedUser = await getPersistedUser();
 
         if (accessToken) {
+          if (persistedUser) {
+            setUser(persistedUser);
+            setAuthData({ user: persistedUser, token: accessToken });
+          }
+
           // Verify via getMe, the apiClient handles auto-refresh if token is expired
           try {
             const userData = await authService.getMe();
             setUser(userData);
             setAuthData({ user: userData, token: accessToken });
+            await setPersistedUser(userData);
             return;
-          } catch (e) {
-             // Fall through to clear if network fails hard and we can't recover
-             throw e;
+          } catch (e: any) {
+             // If it's a network error or 500, we should keep the user logged in with cached data.
+             // Only clear session if it's explicitly a 401/403 meaning token is dead.
+             if (e?.statusCode === 401 || e?.statusCode === 403) {
+               throw e;
+             }
+             if (persistedUser) return; // Silent fail, we already set the cached user
+             throw e; // If we don't have a cached user and getMe fails, we must logout
           }
         } 
         
@@ -52,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const response = await authService.refresh();
           setUser(response.user);
           setAuthData({ user: response.user, token: response.accessToken });
+          await setPersistedUser(response.user);
         }
       } catch {
         await clearTokens();
@@ -106,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authService.login({ email, password });
       setUser(response.user);
       setAuthData({ user: response.user, token: response.accessToken });
+      await setPersistedUser(response.user);
     } catch (err: any) {
       setError(translateError(err));
       throw err;
@@ -118,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authService.register(data);
       setUser(response.user);
       setAuthData({ user: response.user, token: response.accessToken });
+      await setPersistedUser(response.user);
     } catch (err: any) {
       setError(translateError(err));
       throw err;

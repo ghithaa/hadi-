@@ -33,7 +33,7 @@ const mainNavItems = [
 
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { t } = useLocalization();
+  const { t, language, flexDir } = useLocalization();
 
   const currentRouteName = state.routes[state.index].name;
 
@@ -44,7 +44,10 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View
       style={{ paddingBottom: insets.bottom + 12 }}
-      className="flex-row items-center justify-around border-t border-border/40 bg-card px-4 pt-4 shadow-xl"
+      className={cn(
+        "items-center justify-around border-t border-border/40 bg-card px-4 pt-4 shadow-xl",
+        flexDir()
+      )}
     >
       {mainNavItems.map((item) => {
         const Icon = item.icon;

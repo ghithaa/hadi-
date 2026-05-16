@@ -11,27 +11,42 @@ import { LocalizationProvider } from '@/context/LocalizationContext';
 import { View } from 'react-native';
 
 import { ThemeModeProvider } from '@/hooks/use-color-scheme';
+import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 
 void SplashScreen.preventAutoHideAsync();
 
 function SplashController() {
-  const { loading } = useAuth();
+  const { loading: authLoading } = useAuth();
+  const [fontsLoaded, fontError] = useFonts({
+    'Cairo-Regular': require('../assets/fonts/Cairo-Regular.ttf'),
+    'Cairo-Medium': require('../assets/fonts/Cairo-Medium.ttf'),
+    'Cairo-SemiBold': require('../assets/fonts/Cairo-SemiBold.ttf'),
+    'Cairo-Bold': require('../assets/fonts/Cairo-Bold.ttf'),
+    'Cairo-Light': require('../assets/fonts/Cairo-Light.ttf'),
+    'Cairo-Black': require('../assets/fonts/Cairo-Black.ttf'),
+    'Cairo-ExtraBold': require('../assets/fonts/Cairo-ExtraBold.ttf'),
+    'Cairo-ExtraLight': require('../assets/fonts/Cairo-ExtraLight.ttf'),
+  });
 
   useEffect(() => {
-    // Failsafe: hide splash screen after 5 seconds regardless of auth state
+    if (fontError) throw fontError;
+  }, [fontError]);
+
+  useEffect(() => {
+    // Failsafe: hide splash screen after 5 seconds regardless of state
     const timeout = setTimeout(() => {
       void SplashScreen.hideAsync();
     }, 5000);
 
-    if (!loading) {
+    if (!authLoading && fontsLoaded) {
       void SplashScreen.hideAsync();
       clearTimeout(timeout);
     }
 
     return () => clearTimeout(timeout);
-  }, [loading]);
+  }, [authLoading, fontsLoaded]);
 
   return null;
 }

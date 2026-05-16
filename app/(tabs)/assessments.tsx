@@ -4,7 +4,7 @@ import { AppHeader } from '@/components/app-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, ChevronRight, Briefcase, User, Heart, Users } from 'lucide-react-native';
+import { ClipboardList, ChevronRight, ChevronLeft, Briefcase, User, Heart, Users } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/context/LocalizationContext';
 import { useSubmitAssessment } from '@/hooks/use-assessments';
@@ -136,7 +136,7 @@ const assessments: Assessment[] = [
 ];
 
 export default function AssessmentsPage() {
-  const { t } = useLocalization();
+  const { t, isRTL, flexDir, textAlign, alignItems, alignSelf, justifyContent, l, r } = useLocalization();
   const [activeAssessment, setActiveAssessment] = useState<Assessment | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -187,60 +187,70 @@ export default function AssessmentsPage() {
   };
 
   if (activeAssessment) {
+    const progress = ((currentQuestionIndex + 1) / activeAssessment.questions.length) * 100;
     return (
       <View className="flex-1 bg-background">
         <AppHeader />
-        <ScrollView className="flex-1 px-4 pb-6">
-          <Button variant="ghost" onPress={resetAssessment} className="mb-4 self-start">
-            <Text className="text-primary">عودة للقائمة</Text>
-          </Button>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+          <TouchableOpacity onPress={resetAssessment} className={cn("mb-4 mt-2 items-center gap-2 bg-secondary/50 px-4 py-2.5 rounded-full border border-border/40 self-start", flexDir(), isRTL ? 'self-end' : 'self-start')}>
+            {isRTL ? null : <ChevronLeft size={16} color="#0f766e" />}
+            <Text className="text-primary font-bold text-sm">{isRTL ? "عودة للقائمة" : "Back to List"}</Text>
+            {isRTL ? <ChevronRight size={16} color="#0f766e" /> : null}
+          </TouchableOpacity>
 
           {result ? (
-            <Card className="items-center p-6">
-              <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <ClipboardList size={40} className="text-primary" color="#0284c7" />
+            <View className="bg-card border border-border/40 rounded-[28px] p-8 items-center shadow-sm">
+              <View className="mb-5 h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                <ClipboardList size={40} color="#0284c7" />
               </View>
-              <Text className="mb-2 text-2xl font-bold text-foreground">النتيجة</Text>
+              <Text className="mb-2 text-2xl font-bold text-foreground">{isRTL ? 'النتيجة' : 'Result'}</Text>
               <Text className={cn("mb-4 text-xl font-bold", result.color)}>
                 {result.level}
               </Text>
-              <Text className="mb-6 text-center text-muted-foreground">
+              <Text className={cn("mb-6 text-center text-muted-foreground leading-6", textAlign())}>
                 {result.advice}
               </Text>
-              <Button onPress={resetAssessment} className="w-full">
-                <Text>إنهاء</Text>
-              </Button>
-            </Card>
+              <TouchableOpacity onPress={resetAssessment} className="w-full bg-primary py-4 rounded-2xl items-center">
+                <Text className="text-white font-bold">{isRTL ? 'إنهاء' : 'Done'}</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View>
+              {/* Progress */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm text-muted-foreground text-right">
-                  سؤال {currentQuestionIndex + 1} من {activeAssessment.questions.length}
-                </Text>
-                <View className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <View 
-                    className="h-full bg-primary transition-all" 
-                    style={{ width: `${((currentQuestionIndex + 1) / activeAssessment.questions.length) * 100}%` }} 
+                <View className={cn("items-center justify-between mb-3", flexDir())}>
+                  <Text className="text-sm font-bold text-foreground">
+                    {isRTL ? `سؤال ${currentQuestionIndex + 1} من ${activeAssessment.questions.length}` : `Question ${currentQuestionIndex + 1} of ${activeAssessment.questions.length}`}
+                  </Text>
+                  <View className="bg-primary/10 px-3 py-1 rounded-full">
+                    <Text className="text-xs font-bold text-primary">{Math.round(progress)}%</Text>
+                  </View>
+                </View>
+                <View className="h-2.5 w-full overflow-hidden rounded-full bg-secondary/60">
+                  <View
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${progress}%`, alignSelf: isRTL ? 'flex-end' : 'flex-start' }}
                   />
                 </View>
               </View>
 
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <Text className="text-xl font-bold text-center text-foreground leading-relaxed">
-                    {activeAssessment.questions[currentQuestionIndex]}
-                  </Text>
-                </CardContent>
-              </Card>
+              {/* Question */}
+              <View className="mb-8 rounded-[24px] bg-primary/5 border border-primary/10 p-6">
+                <Text className={cn("text-[18px] font-bold text-foreground leading-8", textAlign())}>
+                  {activeAssessment.questions[currentQuestionIndex]}
+                </Text>
+              </View>
 
+              {/* Answer Options — centered */}
               <View className="gap-3">
-                {activeAssessment.options.map((option) => (
+                {activeAssessment.options.map((option, idx) => (
                   <TouchableOpacity
                     key={option.value}
                     onPress={() => handleAnswer(option.value)}
-                    className="w-full rounded-xl border border-border bg-card p-4 hover:bg-accent/10 active:bg-accent/20"
+                    activeOpacity={0.7}
+                    className="w-full rounded-[20px] border-2 border-border/60 bg-card p-4 px-5 items-center justify-center active:bg-primary/5 active:border-primary/30"
                   >
-                    <Text className="text-center font-medium text-foreground">
+                    <Text className="text-center font-bold text-foreground text-[16px]">
                       {option.label}
                     </Text>
                   </TouchableOpacity>
@@ -256,59 +266,51 @@ export default function AssessmentsPage() {
   return (
     <View className="flex-1 bg-background">
       <AppHeader />
-      <ScrollView className="flex-1 px-4 pb-6">
-        <View className="mt-6 mb-6">
-          <Text className="mb-2 text-xl font-bold text-foreground text-right">
-            الاختبارات والمقاييس
-          </Text>
-          <Text className="mb-4 text-sm text-muted-foreground text-right">
-            قيم حالتك النفسية بدقة باستخدام مقاييس علمية معتمدة
-          </Text>
-
-          <View className="gap-6">
-            {categories.map((category) => {
-              const categoryAssessments = assessments.filter(a => a.category === category.id);
-              if (categoryAssessments.length === 0) return null;
-
-              return (
-                <View key={category.id} className="gap-3">
-                  <View className="flex-row items-center justify-end gap-2 mb-1">
-                    <Text className="text-lg font-bold text-foreground">{category.title}</Text>
-                    <category.icon size={20} className="text-primary" color="#0284c7" />
-                  </View>
-                  
-                  {categoryAssessments.map((assessment) => (
-                    <Card key={assessment.id} className="overflow-hidden">
-                      <TouchableOpacity onPress={() => startAssessment(assessment)}>
-                        <View className={cn("h-2 w-full", assessment.color)} />
-                        <CardContent className="p-5">
-                          <View className="flex-row justify-between items-start mb-2">
-                            <Badge variant="secondary" className="bg-secondary/50">
-                              <Text className="text-xs">{assessment.badge}</Text>
-                            </Badge>
-                            <View className={cn("h-10 w-10 items-center justify-center rounded-xl bg-muted")}>
-                              <ClipboardList size={20} className="text-muted-foreground" color="gray" />
-                            </View>
-                          </View>
-                          <Text className="mb-1 text-lg font-bold text-foreground text-right">
-                            {assessment.title}
-                          </Text>
-                          <Text className="text-sm text-muted-foreground text-right mb-4">
-                            {assessment.description}
-                          </Text>
-                          <View className="flex-row items-center justify-end">
-                            <Text className="text-sm font-medium text-primary ml-1">ابدأ الاختبار</Text>
-                            <ChevronRight size={16} className="text-primary" color="#0284c7" />
-                          </View>
-                        </CardContent>
-                      </TouchableOpacity>
-                    </Card>
-                  ))}
-                </View>
-              );
-            })}
-          </View>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+        <View className={cn("mt-6 mb-8", alignItems('start'))}>
+          <Text className={cn("text-3xl font-bold text-foreground mb-1", textAlign())}>{t('tabs.assessments')}</Text>
+          <Text className={cn("text-muted-foreground font-medium", textAlign())}>اكتشف نفسك أكثر من خلال اختباراتنا العلمية</Text>
         </View>
+
+        {categories.map((category) => (
+          <View key={category.id} className="mb-8">
+            <View className={cn("items-center gap-3 mb-4 px-1", flexDir())}>
+              <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <category.icon size={22} color="#0f766e" />
+              </View>
+              <Text className="text-xl font-bold text-foreground">{category.title}</Text>
+            </View>
+
+            <View className="gap-4">
+              {assessments.filter(a => a.category === category.id).map((assessment) => (
+                <TouchableOpacity
+                  key={assessment.id}
+                  onPress={() => startAssessment(assessment)}
+                  activeOpacity={0.7}
+                  className="bg-card border border-border/40 rounded-[28px] p-5 shadow-sm shadow-black/5"
+                >
+                  <View className={cn("items-start justify-between mb-4", flexDir())}>
+                    <View className={cn("flex-1", alignItems('start'))}>
+                      <Badge className={cn("mb-2", assessment.color)}>{assessment.badge}</Badge>
+                      <Text className={cn("text-lg font-bold text-foreground mb-1", textAlign())}>{assessment.title}</Text>
+                      <Text className={cn("text-xs text-muted-foreground font-medium", textAlign())}>{assessment.description}</Text>
+                    </View>
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
+                      {isRTL ? <ChevronLeft size={20} color="#64748b" /> : <ChevronRight size={20} color="#64748b" />}
+                    </View>
+                  </View>
+                  <View className={cn("items-center justify-between pt-4 border-t border-border/40", flexDir())}>
+                    <View className={cn("items-center gap-2", flexDir())}>
+                      <ClipboardList size={14} color="#64748b" />
+                      <Text className="text-[11px] font-bold text-muted-foreground uppercase">{assessment.questions.length} أسئلة</Text>
+                    </View>
+                    <Text className="text-[11px] font-bold text-primary uppercase">ابدأ الآن</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );

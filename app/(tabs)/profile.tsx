@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { t, language } = useLocalization();
+  const { t, language, isRTL, flexDir, textAlign, alignItems, justifyContent, l, r } = useLocalization();
   const { user, signOut } = useAuth();
 
   const doLogout = async () => {
@@ -81,14 +81,14 @@ export default function ProfilePage() {
   return (
     <View className="flex-1 bg-background">
       <AppHeader />
-      <ScrollView className="flex-1 px-4 py-6">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 100 }}>
         {/* Profile Header */}
         <View className="items-center mb-8">
           <View className="relative">
             <View className="h-28 w-28 rounded-full bg-primary/10 items-center justify-center border-4 border-background shadow-xl shadow-black/5 mb-4 overflow-hidden">
               <User size={48} className="text-primary" />
             </View>
-            <View className={cn("absolute bottom-5 bg-amber-400 h-9 w-9 rounded-full items-center justify-center border-4 border-background shadow-sm", language === 'ar' ? 'right-1' : 'left-1')}>
+            <View className={cn("absolute bottom-5 bg-amber-400 h-9 w-9 rounded-full items-center justify-center border-4 border-background shadow-sm", isRTL ? 'right-1' : 'left-1')}>
               <Crown size={16} color="white" fill="white" />
             </View>
           </View>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
             {user?.fullName || t('profile.main.guestName')}
           </Text>
           <Text className="text-sm text-muted-foreground font-medium mt-1">
-            {user?.email || 'guest@hadi.sa'}
+            {user?.email || 'guest@hadee.sa'}
           </Text>
         </View>
 
@@ -108,18 +108,18 @@ export default function ProfilePage() {
           <View className="absolute inset-0 bg-primary dark:bg-indigo-900" />
           <View className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
 
-          <View className={cn("flex-row items-center justify-between p-7 py-8", language === 'en' && "flex-row-reverse")}>
+          <View className={cn("items-center p-7 py-8", flexDir(), justifyContent('between'))}>
             <View className="h-14 w-14 bg-white rounded-2xl items-center justify-center rotate-12 shadow-sm border border-slate-100">
               <Camera color="#64748B" size={24} />
             </View>
-            <View className={cn("flex-1 items-end ml-4", language === 'en' && "items-start mr-4 ml-0")}>
-              <View className={cn("bg-white/20 px-3 py-1 rounded-full mb-2 border border-white/10", language === 'ar' ? "self-end" : "self-start")}>
+            <View className={cn("flex-1", alignItems('start'), isRTL ? "mr-4" : "ml-4")}>
+              <View className={cn("bg-white/20 px-3 py-1 rounded-full mb-2 border border-white/10")}>
                 <Text className="text-white text-[10px] font-bold uppercase tracking-wider">{t('profile.main.bannerBadge')}</Text>
               </View>
-              <Text className={cn("text-white font-bold text-2xl mb-1", language === 'ar' ? "text-right" : "text-left")}>
+              <Text className={cn("text-white font-bold text-2xl mb-1", textAlign())}>
                 {t('profile.main.bannerTitle')}
               </Text>
-              <Text className={cn("text-white/80 text-[13px] font-bold leading-5", language === 'ar' ? "text-right" : "text-left")}>
+              <Text className={cn("text-white/80 text-[13px] font-bold leading-5", textAlign())}>
                 {t('profile.main.bannerDesc')}
               </Text>
             </View>
@@ -134,7 +134,7 @@ export default function ProfilePage() {
         <View className="gap-6 mb-8">
           {menuGroups.map((group, groupIndex) => (
             <View key={groupIndex}>
-              <Text className={cn("text-sm font-bold text-muted-foreground mb-3 px-2", language === 'ar' ? "text-right" : "text-left")}>
+              <Text className={cn("text-sm font-bold text-muted-foreground mb-3 px-2", textAlign())}>
                 {group.title}
               </Text>
               <View className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -146,18 +146,18 @@ export default function ProfilePage() {
                       onPress={() => handleNavigate(item.id)}
                       activeOpacity={0.7}
                       className={cn(
-                        "flex-row items-center justify-between p-4 px-5",
-                        language === 'en' && "flex-row-reverse",
+                        "items-center justify-between p-4 px-5",
+                        flexDir(),
                         index !== group.items.length - 1 && "border-b border-border/50"
                       )}
                     >
-                      {language === 'ar' ? <ChevronLeft size={18} className="text-muted-foreground/50" /> : <ChevronRight size={18} className="text-muted-foreground/50" />}
-                      <View className={cn("flex-row items-center gap-4", language === 'en' && "flex-row-reverse")}>
-                        <Text className="text-[15px] font-bold text-foreground/90">{item.label}</Text>
+                      <View className={cn("items-center gap-4", flexDir())}>
                         <View className={`h-11 w-11 rounded-2xl items-center justify-center shadow-sm shadow-black/[0.02] ${item.bg}`}>
                           <Icon size={20} color={item.color} />
                         </View>
+                        <Text className="text-[15px] font-bold text-foreground/90">{item.label}</Text>
                       </View>
+                      <ChevronRight size={18} className="text-muted-foreground/50" style={{ transform: [{ rotate: isRTL ? '180deg' : '0deg' }] }} />
                     </TouchableOpacity>
                   );
                 })}
@@ -169,10 +169,10 @@ export default function ProfilePage() {
         {/* Logout Button */}
         <TouchableOpacity
           onPress={handleLogout}
-          className={cn("flex-row items-center justify-center p-5 rounded-[24px] bg-destructive/10 dark:bg-destructive/20 mb-8 border border-destructive/10 active:scale-[0.98]", language === 'en' && "flex-row-reverse")}
+          className={cn("items-center justify-center p-5 rounded-[24px] bg-destructive/10 dark:bg-destructive/20 mb-8 border border-destructive/10 active:scale-[0.98]", flexDir())}
         >
-          <Text className={cn("text-destructive font-bold text-base", language === 'ar' ? "mr-3" : "ml-3")}>{t('profile.main.logout')}</Text>
           <LogOut size={22} className="text-destructive" />
+          <Text className={cn("text-destructive font-bold text-base", isRTL ? "mr-3" : "ml-3")}>{t('profile.main.logout')}</Text>
         </TouchableOpacity>
         {/* admissions */}
         <View className="items-center mb-8">

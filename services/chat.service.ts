@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import { getAccessToken } from '@/lib/token-storage';
 import { ChatSession, ChatMessage, CreateSessionPayload, SendMessagePayload } from '@/types';
+import EventSource from 'react-native-sse';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002/api/v1';
 
@@ -25,17 +26,24 @@ export const chatService = {
     return apiClient.get<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
   },
 
+  submitTestResult(sessionId: string, data: any): Promise<any> {
+    return apiClient.post(`/chat/sessions/${sessionId}/test-results`, data);
+  },
+
   /** Returns a ReadableStream for SSE — reads token-by-token from the backend */
   async sendMessageStream(
     sessionId: string,
     data: SendMessagePayload,
     onChunk: (text: string) => void,
     onDone: () => void,
-    onError: (err: Error) => void
+    onError: (err: Error) => void,
+    isRetry = false
   ): Promise<void> {
     try {
       const token = getAccessToken();
-      const response = await fetch(`${BASE_URL}/chat/sessions/${sessionId}/messages`, {
+      const url = `${BASE_URL}/chat/sessions/${sessionId}/messages`;
+      
+      const es = new EventSource(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,44 +53,55 @@ export const chatService = {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok || !response.body) {
-        onError(new Error(`Stream failed: ${response.status}`));
-        return;
-      }
+      es.addEventListener('message', (event) => {
+        if (!event.data) return;
+        
+        if (event.data === '[DONE]') {
+          es.close();
+          onDone();
+          return;
+        }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed?.done === true) {
+            es.close();
+            onDone();
+          } else if (parsed?.token !== undefined) {
+            onChunk(parsed.token);
+          }
+        } catch {
+          // Skip non-JSON lines
+        }
+      });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const rawData = line.slice(5).trim();
-            if (rawData === '[DONE]') {
-              onDone();
+      es.addEventListener('error', async (event: any) => {
+        if (event.type === 'error') {
+          es.close();
+          const errorMsg = event.message || event.error?.message || 'Connection interrupted';
+          
+          // If the token is expired, EventSource fails directly because it bypasses apiClient's interceptors.
+          if ((errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication required')) && !isRetry) {
+            try {
+              // Trigger a dummy request to force token refresh via apiClient
+              await apiClient.get('/chat/sessions');
+              // Retry stream with new token
+              chatService.sendMessageStream(sessionId, data, onChunk, onDone, onError, true);
+              return;
+            } catch (e) {
+              onError(new Error('Authentication failed. Please log in again.'));
               return;
             }
-            try {
-              const parsed = JSON.parse(rawData);
-              if (parsed?.done === true) {
-                onDone();
-                return;
-              } else if (parsed?.token !== undefined) {
-                onChunk(parsed.token);
-              }
-            } catch {
-              // Skip non-JSON lines
-            }
           }
-        }
-      }
 
-      onDone();
+          onError(new Error(errorMsg));
+        }
+      });
+      
+      es.addEventListener('close', () => {
+        onDone();
+      });
+
     } catch (err) {
       onError(err instanceof Error ? err : new Error(String(err)));
     }

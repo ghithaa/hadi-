@@ -26,10 +26,10 @@ export default function TabLayout() {
       <Tabs.Screen name="drawing" options={{ href: null }} />
       <Tabs.Screen name="emergency" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="plan" options={{ href: null }} />
       <Tabs.Screen name="cbt" options={{ href: null }} />
       <Tabs.Screen name="emotions" options={{ href: null }} />
+      <Tabs.Screen name="journeys" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -6,6 +6,8 @@ import { Calendar, TrendingUp, Smile } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useMoodChart, useMoodStats, useMoodToday, useLogMood } from '@/hooks/use-mood';
 
+import { useLocalization } from '@/context/LocalizationContext';
+
 const moods = [
   { emoji: "😫", label: "سيء جداً", level: 1, color: "bg-red-500" },
   { emoji: "😔", label: "سيء", level: 2, color: "bg-orange-500" },
@@ -31,6 +33,7 @@ const chartConfig = {
 };
 
 export default function MoodPage() {
+  const { t, isRTL, flexDir, textAlign, alignItems, justifyContent } = useLocalization();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const logMood = useLogMood();
   const { data: chartData, isLoading: chartLoading } = useMoodChart();
@@ -48,11 +51,15 @@ export default function MoodPage() {
             color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
             strokeWidth: 3,
           },
+          { data: [5], withDots: false, color: () => 'transparent' }
         ],
       }
     : {
         labels: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"],
-        datasets: [{ data: [3, 4, 2, 5, 4, 3, 4], color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, strokeWidth: 3 }],
+        datasets: [
+          { data: [3, 4, 2, 5, 4, 3, 4], color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, strokeWidth: 3 },
+          { data: [5], withDots: false, color: () => 'transparent' }
+        ],
       };
 
   const handleMoodSelect = async (level: number) => {
@@ -85,15 +92,15 @@ export default function MoodPage() {
         <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-primary/20" />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={true}>
         <View className="mt-8 mb-8">
-          <Text className="text-2xl font-bold text-slate-900 text-right mb-2">كيف تشعر اليوم؟</Text>
-          <Text className="text-sm text-slate-500 text-right font-medium leading-6">
+          <Text className={cn("text-2xl font-bold text-slate-900 mb-2", textAlign())}>كيف تشعر اليوم؟</Text>
+          <Text className={cn("text-sm text-slate-500 font-medium leading-6", textAlign())}>
             {hasLoggedToday ? 'لقد سجلت مزاجك اليوم بالفعل' : 'سجل حالتك المزاجية لنتمكن من مساعدتك بشكل أفضل'}
           </Text>
         </View>
 
-        <View className="flex-row-reverse justify-between mb-8">
+        <View className={cn("justify-between mb-8", flexDir())}>
           {moods.map((mood) => (
             <TouchableOpacity
               key={mood.level}
@@ -120,10 +127,10 @@ export default function MoodPage() {
         </View>
 
         <View className="bg-white border border-white/60 rounded-[35px] py-6 mb-8 shadow-2xl overflow-hidden" style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}>
-          <View className="flex-row-reverse items-center justify-between px-6 mb-4">
-            <View>
-              <Text className="text-xl font-bold text-slate-900 text-right">ملخص الأسبوع</Text>
-              <Text className="text-xs text-slate-500 text-right mt-0.5 font-medium">بياناتك المسجلة خلال الـ 7 أيام الماضية</Text>
+          <View className={cn("items-center justify-between px-6 mb-4", flexDir())}>
+            <View className={alignItems('start')}>
+              <Text className={cn("text-xl font-bold text-slate-900", textAlign())}>ملخص الأسبوع</Text>
+              <Text className={cn("text-xs text-slate-500 mt-0.5 font-medium", textAlign())}>بياناتك المسجلة خلال الـ 7 أيام الماضية</Text>
             </View>
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100/50">
               <Calendar size={20} color="#94a3b8" />
@@ -139,9 +146,15 @@ export default function MoodPage() {
               data={formattedChartData}
               width={screenWidth - 40}
               height={220}
+              fromZero={true}
+              segments={5}
               chartConfig={chartConfig}
               bezier
-              style={{ marginVertical: 8, marginRight: 20 }}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+                paddingRight: 20, // Extra padding for labels
+              }}
               withVerticalLines={false}
               withHorizontalLines={true}
               withInnerLines={true}
@@ -151,7 +164,7 @@ export default function MoodPage() {
           )}
         </View>
 
-        <View className="flex-row gap-4">
+        <View className={cn("gap-4", flexDir())}>
           <View className="flex-1 bg-white/70 border border-white/60 rounded-[30px] p-5 items-center justify-center" style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}>
             <View className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 mb-3">
               <TrendingUp color="#3b82f6" size={24} />

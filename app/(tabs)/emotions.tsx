@@ -8,8 +8,10 @@ import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useAnalyzeEmotion } from '@/hooks/use-emotions';
 import { EmotionEntry } from '@/types';
+import { useLocalization } from '@/context/LocalizationContext';
 
 export default function EmotionsPage() {
+  const { isRTL, flexDir, textAlign, alignItems } = useLocalization();
   const [text, setText] = useState('');
   const [result, setResult] = useState<EmotionEntry | null>(null);
   const analyzeEmotion = useAnalyzeEmotion();
@@ -43,25 +45,25 @@ export default function EmotionsPage() {
         <View className="p-4 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>كيف تشعر الآن؟</CardTitle>
-              <CardDescription>اكتب ما يجول في خاطرك وسنقوم بتحليل مشاعرك</CardDescription>
+              <CardTitle className={textAlign()}>{isRTL ? 'كيف تشعر الآن؟' : 'How are you feeling now?'}</CardTitle>
+              <CardDescription className={textAlign()}>{isRTL ? 'اكتب ما يجول في خاطرك وسنقوم بتحليل مشاعرك' : 'Write what\'s on your mind and we\'ll analyze your emotions'}</CardDescription>
             </CardHeader>
             <CardContent className="gap-4">
               <TextInput
-                className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-right text-foreground"
-                placeholder="اكتب هنا..."
+                className={cn("min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground", textAlign())}
+                placeholder={isRTL ? "اكتب هنا..." : "Write here..."}
                 multiline
                 textAlignVertical="top"
                 value={text}
                 onChangeText={setText}
               />
               <Button onPress={handleAnalyze} disabled={!text.trim() || analyzeEmotion.isPending}>
-                <View className="flex-row items-center gap-2">
+                <View className={cn("items-center gap-2", flexDir())}>
                   {analyzeEmotion.isPending ? (
                     <ActivityIndicator color="white" size="small" />
                   ) : (
                     <>
-                      <Text className="text-primary-foreground">تحليل المشاعر</Text>
+                      <Text className="text-primary-foreground">{isRTL ? 'تحليل المشاعر' : 'Analyze Emotions'}</Text>
                       <Sparkles size={16} color="white" />
                     </>
                   )}
@@ -74,29 +76,31 @@ export default function EmotionsPage() {
             <View className="gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>نتيجة التحليل</CardTitle>
+                  <CardTitle className={textAlign()}>{isRTL ? 'نتيجة التحليل' : 'Analysis Result'}</CardTitle>
                 </CardHeader>
                 <CardContent className="gap-6">
-                  <View className="flex-row items-center justify-between p-4 bg-muted rounded-lg">
-                    <View className="flex-row items-center gap-2">
+                  <View className={cn("items-center justify-between p-4 bg-muted rounded-lg", flexDir())}>
+                    <View className={cn("items-center gap-2", flexDir())}>
                       <Text className={cn(
                         "font-bold text-lg",
                         sentiment === 'positive' ? "text-green-600" :
                         sentiment === 'negative' ? "text-red-600" : "text-gray-600"
                       )}>
-                        {sentiment === 'positive' ? "إيجابي" : sentiment === 'negative' ? "سلبي" : "محايد"}
+                        {sentiment === 'positive' ? (isRTL ? "إيجابي" : "Positive") :
+                         sentiment === 'negative' ? (isRTL ? "سلبي" : "Negative") :
+                         (isRTL ? "محايد" : "Neutral")}
                       </Text>
                       {sentiment === 'positive' ? <TrendingUp size={20} color="#16a34a" /> :
                        sentiment === 'negative' ? <TrendingDown size={20} color="#dc2626" /> :
                        <Minus size={20} color="#6b7280" />}
                     </View>
-                    <Text className="text-sm font-medium">الحالة العامة</Text>
+                    <Text className="text-sm font-medium">{isRTL ? 'الحالة العامة' : 'Overall State'}</Text>
                   </View>
 
                   {result.detected_emotions && result.detected_emotions.length > 0 && (
                     <View className="gap-3">
-                      <Text className="text-right font-medium">المشاعر المكتشفة</Text>
-                      <View className="flex-row flex-wrap justify-end gap-2">
+                      <Text className={cn("font-medium", textAlign())}>{isRTL ? 'المشاعر المكتشفة' : 'Detected Emotions'}</Text>
+                      <View className={cn("flex-wrap gap-2", flexDir())}>
                         {result.detected_emotions.map((emotion, i) => (
                           <Badge key={i} variant="secondary" className="px-3 py-1">
                             <Text>{emotion.emotion_name} ({Math.round(emotion.score * 10)}/10)</Text>

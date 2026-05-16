@@ -59,6 +59,17 @@
     </array>
     <key>RCTNewArchEnabled</key>
     <true/>
+    <key>UIAppFonts</key>
+    <array>
+      <string>Cairo-Regular.ttf</string>
+      <string>Cairo-Medium.ttf</string>
+      <string>Cairo-SemiBold.ttf</string>
+      <string>Cairo-Bold.ttf</string>
+      <string>Cairo-Light.ttf</string>
+      <string>Cairo-Black.ttf</string>
+      <string>Cairo-ExtraBold.ttf</string>
+      <string>Cairo-ExtraLight.ttf</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

@@ -1,12 +1,9 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/app-header';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   MessageCircle,
   ClipboardList,
-  Palette,
   Brain,
   Sparkles,
   ArrowLeft,
@@ -25,10 +22,12 @@ import {
 } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
   const router = useRouter();
-  const { t, language } = useLocalization();
+  const { t, isRTL, flexDir, textAlign, alignItems, justifyContent, l, r } = useLocalization();
+  const { user } = useAuth();
 
   const mainServices = [
     {
@@ -132,7 +131,7 @@ export default function HomePage() {
       iconColor: '#ef4444', // red-500
     },
     {
-      id: 'reports',
+      id: 'insights',
       title: t('tabs.insights'),
       description: t('home.card.reports.desc'),
       icon: BarChart3,
@@ -142,82 +141,110 @@ export default function HomePage() {
   ];
 
   const handleNavigate = (id: string) => {
-    // @ts-ignore
-    router.push(`/(tabs)/${id}`);
+    if (id === 'parental') return;
+
+    // Use explicit route map for typed routing
+    const routes: Record<string, string> = {
+      chat: '/(tabs)/chat',
+      assessments: '/(tabs)/assessments',
+      mood: '/(tabs)/mood',
+      breathing: '/(tabs)/breathing',
+      plan: '/(tabs)/plan',
+      cbt: '/(tabs)/cbt',
+      drawing: '/(tabs)/drawing',
+      journeys: '/(tabs)/journeys',
+      gratitude: '/(tabs)/gratitude',
+      sleep: '/(tabs)/sleep',
+      emergency: '/(tabs)/emergency',
+      insights: '/(tabs)/insights',
+      emotions: '/(tabs)/emotions',
+    };
+    const route = routes[id];
+    if (route) router.push(route as any);
   };
 
   return (
     <View className="flex-1 bg-background">
       <AppHeader />
-      <ScrollView className="flex-1 px-4 pb-6">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero Section */}
-        <View className="relative mt-2 overflow-hidden rounded-[32px] bg-primary px-6 pb-8 pt-8 mb-8 shadow-xl shadow-primary/20 border border-primary/10">
-          <View className="absolute inset-0 opacity-20">
-            <View className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-white/30" />
-            <View className="absolute -bottom-8 -right-8 h-48 w-48 rounded-full bg-white/20" />
-          </View>
-          <View className={cn("relative z-10 items-end", language === 'en' && "items-start")}>
-            <Badge className={cn("mb-4 border border-white/20 bg-primary shadow-sm", language === 'ar' ? "self-end" : "self-start")}>
-              <Text className="text-primary-foreground text-[10px] font-bold tracking-widest uppercase px-1">{t('home.hero.badge')}</Text>
-              <Sparkles size={12} color="white" className={language === 'ar' ? "mr-1" : "ml-1"} />
-            </Badge>
-            <Text className={cn("mb-3 text-3xl font-bold leading-tight text-primary-foreground tracking-tight", language === 'ar' ? "text-right" : "text-left")}>
-              {t('intro.title')}
-            </Text>
-            <Text className={cn("mb-6 text-[15px] leading-relaxed text-primary-foreground/90 font-medium max-w-[90%]", language === 'ar' ? "text-right" : "text-left")}>
-              {t('intro.subtitle')}
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => handleNavigate('chat')}
-              className={cn("bg-background rounded-[20px] h-14 px-7 flex-row items-center shadow-lg shadow-black/5 border border-white/20", language === 'ar' ? "self-end" : "self-start")}
-            >
-              {language === 'ar' ? <ArrowLeft size={18} color="#0f766e" className="mr-3" /> : <ArrowRight size={18} color="#0f766e" className="ml-3" />}
-              <Text className="text-[#0f766e] font-bold text-[15px]">{t('home.hero.button')}</Text>
-            </TouchableOpacity>
+        <View className="px-5 pt-6 mb-8">
+          <View className="relative overflow-hidden rounded-[40px] bg-primary p-8 shadow-2xl shadow-primary/30">
+            {/* Decorative background shapes */}
+            <View className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-white/10" />
+            <View className="absolute -left-8 -bottom-8 h-40 w-40 rounded-full bg-white/5" />
+
+            <View className={cn("relative z-10", alignItems('start'))}>
+              <View className={cn("mb-4 items-center rounded-full border border-white/20 bg-primary px-3 py-1.5 shadow-sm", flexDir())}>
+                <Text className="text-primary-foreground text-[10px] font-bold tracking-widest uppercase px-1">{t('home.hero.badge')}</Text>
+                <Sparkles size={12} color="white" />
+              </View>
+              <Text className={cn("mb-3 text-3xl font-bold leading-tight text-primary-foreground tracking-tight", textAlign())}>
+                {t('intro.title')}
+              </Text>
+              <Text className={cn("mb-6 text-[15px] leading-relaxed text-primary-foreground/90 font-medium max-w-[90%]", textAlign())}>
+                {t('intro.subtitle')}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => handleNavigate('chat')}
+                className={cn("bg-background rounded-[20px] h-14 px-7 items-center shadow-lg shadow-black/5 border border-white/20", flexDir())}
+              >
+                {isRTL ? <ArrowLeft size={18} color="#0f766e" className="mr-3" /> : <ArrowRight size={18} color="#0f766e" className="ml-3" />}
+                <Text className="text-[#0f766e] font-bold text-[15px]">{t('home.hero.button')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
         {/* Main Services Grid */}
-        <View className="mb-8">
-          <Text className={cn("mb-4 text-xl font-bold text-foreground px-1", language === 'ar' ? "text-right" : "text-left")}>
+        <View className="mb-8 px-5">
+          <Text className={cn("mb-4 text-xl font-bold text-foreground px-1", textAlign())}>
             {t('home.services.main')}
           </Text>
-          <View className={cn("flex-row flex-wrap justify-between gap-4", language === 'en' && "flex-row-reverse")}>
-            {mainServices.map((action) => {
-              const Icon = action.icon;
+          <View className="gap-4">
+            {Array.from({ length: Math.ceil(mainServices.length / 2) }).map((_, rowIndex) => {
+              const rowItems = mainServices.slice(rowIndex * 2, rowIndex * 2 + 2);
               return (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  key={action.id}
-                  className={cn("w-[48%] rounded-[28px] bg-card p-5 border border-border/40 shadow-sm shadow-black/5 flex flex-col mb-4", language === 'ar' ? "items-end" : "items-start")}
-                  onPress={() => handleNavigate(action.id)}
-                >
-                  <View
-                    className={cn(
-                      `flex h-12 w-12 items-center justify-center rounded-[20px] mb-5 shadow-sm`,
-                      action.iconBg
-                    )}
-                  >
-                    <Icon size={22} color={action.iconColor || "white"}  />
-                  </View>
-                  <View className={language === 'ar' ? "items-end" : "items-start"}>
-                    <Text className={cn("text-[15px] font-bold text-foreground mb-1", language === 'ar' ? "text-right" : "text-left")}>
-                      {action.title}
-                    </Text>
-                    <Text className={cn("text-[12px] text-muted-foreground leading-[18px] font-medium opacity-90", language === 'ar' ? "text-right" : "text-left")}>
-                      {action.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                <View key={rowIndex} className={cn("justify-between w-full", flexDir())}>
+                  {rowItems.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        key={action.id}
+                        className={cn("w-[48%] rounded-[28px] bg-card p-5 border border-border/40 shadow-sm shadow-black/5 flex flex-col", isRTL ? 'items-end' : 'items-start')}
+                        onPress={() => handleNavigate(action.id)}
+                      >
+                        <View
+                          className={cn(
+                            `flex h-12 w-12 items-center justify-center rounded-[20px] mb-5 shadow-sm`,
+                            action.iconBg
+                          )}
+                        >
+                          <Icon size={22} color={action.iconColor || "white"} />
+                        </View>
+                        <View className={isRTL ? 'items-end' : 'items-start'}>
+                          <Text className={cn("text-[15px] font-bold text-foreground mb-1", isRTL ? 'text-right' : 'text-left')}>
+                            {action.title}
+                          </Text>
+                          <Text className={cn("text-[12px] text-muted-foreground leading-[18px] font-medium opacity-90", isRTL ? 'text-right' : 'text-left')}>
+                            {action.description}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {rowItems.length === 1 && <View className="w-[48%]" />}
+                </View>
               );
             })}
           </View>
         </View>
 
         {/* More Services List */}
-        <View className="mb-10">
-          <Text className={cn("mb-4 text-xl font-bold text-foreground px-1", language === 'ar' ? "text-right" : "text-left")}>
+        <View className="mb-10 px-5">
+          <Text className={cn("mb-4 text-xl font-bold text-foreground px-1", textAlign())}>
             {t('home.services.more')}
           </Text>
           <View className="gap-4">
@@ -227,33 +254,32 @@ export default function HomePage() {
                 <TouchableOpacity
                   activeOpacity={0.8}
                   key={action.id}
-                  className={cn("w-full rounded-[28px] bg-card p-4 border border-border/40 shadow-sm shadow-black/5 flex-row items-center justify-between", language === 'en' && "flex-row-reverse")}
+                  className={cn("w-full rounded-[28px] bg-card p-4 border border-border/40 shadow-sm shadow-black/5 items-center justify-between gap-4", flexDir())}
                   onPress={() => handleNavigate(action.id)}
                   disabled={action.isSoon}
                   style={{ opacity: action.isSoon ? 0.6 : 1 }}
                 >
-                  <View className={cn("h-8 w-8 items-center justify-center rounded-full bg-secondary/50", language === 'ar' ? "mr-2" : "ml-2")}>
-                    {language === 'ar' ? <ChevronLeft size={16} color="#64748b"  /> : <ChevronRight size={16} color="#64748b"  />}
+                  <View
+                    className={cn(
+                      "h-12 w-12 items-center justify-center rounded-[18px] shadow-sm",
+                      action.iconBg
+                    )}
+                  >
+                    <Icon size={20} color={action.iconColor || "white"} />
                   </View>
 
-                  <View className={cn("flex-1 flex-row items-center gap-4", language === 'ar' ? "justify-end" : "justify-start")}>
-                    <View className={cn("flex-1", language === 'ar' ? "items-end pr-2" : "items-start pl-2")}>
-                      <Text className={cn("text-[15px] font-bold text-foreground mb-1", language === 'ar' ? "text-right" : "text-left")}>
-                        {action.title}
-                        {action.isSoon && <Text className="text-xs text-muted-foreground ml-2"> (Soon)</Text>}
-                      </Text>
-                      <Text className={cn("text-[12px] text-muted-foreground leading-[18px] font-medium opacity-90", language === 'ar' ? "text-right" : "text-left")}>
-                        {action.description}
-                      </Text>
-                    </View>
-                    <View
-                      className={cn(
-                        `flex h-12 w-12 items-center justify-center rounded-[20px] shadow-sm`,
-                        action.iconBg
-                      )}
-                    >
-                      <Icon size={22} color={action.iconColor || "white"}  />
-                    </View>
+                  <View className={cn("flex-1", alignItems('start'))}>
+                    <Text className={cn("text-[15px] font-bold text-foreground mb-1", textAlign())}>
+                      {action.title}
+                      {action.isSoon && <Text className="text-xs text-muted-foreground mx-2"> (Soon)</Text>}
+                    </Text>
+                    <Text className={cn("text-[12px] text-muted-foreground leading-[18px] font-medium opacity-90", textAlign())}>
+                      {action.description}
+                    </Text>
+                  </View>
+
+                  <View className={cn("h-8 w-8 items-center justify-center rounded-full bg-secondary/50")}>
+                    {isRTL ? <ChevronLeft size={16} color="#64748b" /> : <ChevronRight size={16} color="#64748b" />}
                   </View>
                 </TouchableOpacity>
               );

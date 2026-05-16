@@ -4,8 +4,11 @@ import { AppHeader } from '@/components/app-header';
 import { BookOpen, Plus } from 'lucide-react-native';
 import { useGratitudeEntries, useLogGratitude } from '@/hooks/use-gratitude';
 import { EmptyState } from '@/components/ui/empty-state';
+import { cn } from '@/lib/utils';
+import { useLocalization } from '@/context/LocalizationContext';
 
 export default function GratitudePage() {
+  const { isRTL, flexDir, textAlign, alignItems } = useLocalization();
   const [newItem, setNewItem] = useState('');
 
   const { data: entries, isLoading } = useGratitudeEntries({ limit: 20 });
@@ -46,13 +49,13 @@ export default function GratitudePage() {
               <BookOpen size={32} color="#10b981" />
             </View>
           </View>
-          <Text className="text-2xl font-bold text-slate-900 text-center">دفتر الامتنان</Text>
+          <Text className="text-2xl font-bold text-slate-900 text-center">{isRTL ? 'دفتر الامتنان' : 'Gratitude Journal'}</Text>
           <Text className="text-center text-slate-500 text-sm mt-2 font-medium leading-6 max-w-[80%]">
-            دون النعم والأشياء الجميلة التي تشعر بالامتنان لوجودها في حياتك
+            {isRTL ? 'دون النعم والأشياء الجميلة التي تشعر بالامتنان لوجودها في حياتك' : 'Write down the blessings and beautiful things you are grateful for in your life'}
           </Text>
         </View>
 
-        <View className="mb-10 bg-white/70 border border-white/60 rounded-[30px] p-4 flex-row-reverse items-center" style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 20, shadowOffset: { width: 0, height: 10 } }}>
+        <View className={cn("mb-10 bg-white/70 border border-white/60 rounded-[30px] p-4 items-center", flexDir())} style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 20, shadowOffset: { width: 0, height: 10 } }}>
           <TouchableOpacity
             onPress={handleAddItem}
             disabled={!newItem.trim() || logGratitude.isPending}
@@ -66,8 +69,8 @@ export default function GratitudePage() {
             )}
           </TouchableOpacity>
           <TextInput
-            className="flex-1 h-12 px-4 text-right text-slate-700 font-bold text-sm"
-            placeholder="أنا ممتن لـ..."
+            className={cn("flex-1 h-12 px-4 text-slate-700 font-bold text-sm", textAlign())}
+            placeholder={isRTL ? "أنا ممتن لـ..." : "I am grateful for..."}
             placeholderTextColor="#94a3b8"
             value={newItem}
             onChangeText={setNewItem}
@@ -81,8 +84,8 @@ export default function GratitudePage() {
           </View>
         ) : allItems.length === 0 ? (
           <EmptyState
-            title="لا توجد مدخلات بعد"
-            message="ابدأ بكتابة شيء تشعر بالامتنان له"
+            title={isRTL ? "لا توجد مدخلات بعد" : "No entries yet"}
+            message={isRTL ? "ابدأ بكتابة شيء تشعر بالامتنان له" : "Start by writing something you're grateful for"}
             icon={BookOpen}
           />
         ) : (
@@ -90,11 +93,11 @@ export default function GratitudePage() {
             {allItems.map((item) => (
               <View
                 key={item.id}
-                className="w-full rounded-[25px] border border-white/60 bg-white/70 p-5 flex-row-reverse items-center justify-between"
+                className={cn("w-full rounded-[25px] border border-white/60 bg-white/70 p-5 items-center justify-between", flexDir())}
                 style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 15, shadowOffset: { width: 0, height: 6 } }}
               >
-                <View className="absolute right-0 top-0 bottom-0 w-1.5 bg-emerald-500/40 rounded-r-full" />
-                <Text className="flex-1 text-right text-[15px] font-bold text-slate-800 leading-6 mr-4">
+                <View className={cn("absolute top-0 bottom-0 w-1.5 bg-emerald-500/40", isRTL ? "right-0 rounded-r-full" : "left-0 rounded-l-full")} />
+                <Text className={cn("flex-1 text-[15px] font-bold text-slate-800 leading-6", textAlign(), isRTL ? "mr-4" : "ml-4")}>
                   {item.text}
                 </Text>
               </View>
