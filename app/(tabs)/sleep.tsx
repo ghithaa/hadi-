@@ -12,6 +12,18 @@ import { useLocalization } from '@/context/LocalizationContext';
 const qualityLabelsAr = ["", "سيء جدا", "سيء", "متوسط", "جيد", "ممتاز"];
 const qualityLabelsEn = ["", "Very Bad", "Bad", "Average", "Good", "Excellent"];
 const qualityColors = ["", "text-destructive", "text-orange-500", "text-amber-500", "text-primary", "text-accent"];
+const getDayName = (dateStr: string, isRTL: boolean) => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  
+  if (isRTL) {
+    const daysAr = ["ح", "ن", "ث", "ر", "خ", "ج", "س"];
+    return daysAr[date.getDay()];
+  } else {
+    const daysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return daysEn[date.getDay()];
+  }
+};
 
 export default function SleepPage() {
   const { isRTL, flexDir, textAlign, alignItems } = useLocalization();
@@ -28,21 +40,23 @@ export default function SleepPage() {
   const hasLoggedToday = todayEntry?.logged ?? false;
 
   const formattedChartData = useMemo(() => {
-    if (chartData?.data && chartData.data.length > 0) {
-      return {
-        labels: chartData.labels,
-        datasets: [
-          { data: chartData.data, color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, strokeWidth: 3 },
-          { data: [12], withDots: false, color: () => 'transparent' }
-        ],
-      };
-    }
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+
+    const labels = last7Days.map(dateStr => getDayName(dateStr, isRTL));
+    const data = last7Days.map(dateStr => {
+      const matchIndex = chartData?.labels?.findIndex(l => l && l.startsWith(dateStr));
+      const val = (matchIndex !== undefined && matchIndex !== -1) ? Number(chartData?.data?.[matchIndex]) : 0;
+      return isNaN(val) ? 0 : val;
+    });
+
     return {
-      labels: isRTL
-        ? ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"]
-        : ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
+      labels,
       datasets: [
-        { data: [6, 7.5, 5.5, 8, 7, 6.5, 7.5], color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, strokeWidth: 3 },
+        { data, color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`, strokeWidth: 3 },
         { data: [12], withDots: false, color: () => 'transparent' }
       ],
     };
@@ -65,7 +79,7 @@ export default function SleepPage() {
         <AppHeader />
       </View>
 
-      <View className="absolute inset-0 overflow-hidden opacity-[0.1]">
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden opacity-[0.1]">
         <View className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-primary/10" style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }} />
         <View className="absolute top-1/4 -right-40 h-[350px] w-[350px] rounded-full bg-accent/10" style={{ transform: [{ scaleX: 1.2 }] }} />
         <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-secondary/20" />
@@ -99,7 +113,7 @@ export default function SleepPage() {
               <Text className={cn("text-xl font-bold text-foreground", textAlign())}>{isRTL ? 'تحليل النوم' : 'Sleep Analysis'}</Text>
               <Text className={cn("text-xs text-muted-foreground mt-0.5 font-medium", textAlign())}>{isRTL ? 'نظرة عامة على نمط نومك خلال الاسبوع' : 'An overview of your sleep pattern this week'}</Text>
             </View>
-            <View className="items-center">
+            <View className="items-center w-full" style={{ direction: 'ltr' }}>
               <LineChart
                 data={formattedChartData}
                 width={Dimensions.get("window").width - 40}
@@ -127,6 +141,8 @@ export default function SleepPage() {
                   marginVertical: 8,
                   borderRadius: 16,
                   paddingRight: 20, // Extra padding for labels
+                  direction: 'ltr',
+                  backgroundColor: 'transparent',
                 }}
               />
             </View>

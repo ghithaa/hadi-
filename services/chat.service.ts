@@ -3,7 +3,11 @@ import { getAccessToken } from '@/lib/token-storage';
 import { ChatSession, ChatMessage, CreateSessionPayload, SendMessagePayload } from '@/types';
 import EventSource from 'react-native-sse';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002/api/v1';
+const PROD_API_URL = 'http://34.18.213.53:3000/api/v1';
+const BASE_URL = (__DEV__
+  ? (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3002/api/v1')
+  : (process.env.EXPO_PUBLIC_API_URL || PROD_API_URL)
+).replace(/\/$/, '');
 
 export const chatService = {
   createSession(data: CreateSessionPayload): Promise<ChatSession> {
@@ -27,7 +31,7 @@ export const chatService = {
   },
 
   submitTestResult(sessionId: string, data: any): Promise<any> {
-    return apiClient.post(`/chat/sessions/${sessionId}/test-results`, data);
+    return apiClient.post(`/chat/sessions/${sessionId}/test-result`, data);
   },
 
   /** Returns a ReadableStream for SSE — reads token-by-token from the backend */

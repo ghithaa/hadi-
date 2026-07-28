@@ -19,20 +19,24 @@ export function AppHeader() {
 
   return (
     <View
-      className={cn("bg-background px-5 items-center justify-between border-b border-border/40", flexDir())}
+      className={cn("bg-background px-5 items-center justify-between border-b border-border-40", flexDir())}
       style={{
         paddingTop: Math.max(insets.top, 16),
         paddingBottom: 16,
       }}
     >
       {/* Branding Section */}
-      <View className={cn("items-center gap-3", flexDir())}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => router.replace('/(tabs)')}
+        className={cn("items-center gap-3", flexDir())}
+      >
         <View
-          className="h-[46px] w-[46px] items-center justify-center rounded-[18px] bg-primary/10 border border-primary/20"
+          className="h-[46px] w-[46px] items-center justify-center rounded-[18px] bg-primary-10 border border-primary-20"
         >
           <Image
-            source={require('../assets/images/logoTrans.png')}
-            style={{ width: 32, height: 32 }}
+            source={require('../assets/images/icon-foreground.png')}
+            style={{ width: 50, height: 50}}
             resizeMode="contain"
           />
         </View>
@@ -44,13 +48,13 @@ export function AppHeader() {
             {t('header.app.subtitle')}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Actions Section */}
       <View className={cn("items-center gap-2", flexDir())}>
         <TouchableOpacity
           activeOpacity={0.7}
-          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50"
+          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border-50"
           onPress={toggleTheme}
         >
           {colorScheme === 'dark' ? (
@@ -62,7 +66,7 @@ export function AppHeader() {
 
         <TouchableOpacity
           activeOpacity={0.7}
-          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50"
+          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border-50"
           onPress={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
         >
           <Globe size={18} color="#64748b" />
@@ -70,7 +74,8 @@ export function AppHeader() {
 
         <TouchableOpacity
           activeOpacity={0.7}
-          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border/50 relative"
+          className="h-10 w-10 items-center justify-center rounded-full bg-secondary border border-border-50 relative"
+          onPress={() => router.push('/profile-details/notifications')}
         >
           <Bell size={18} color="#64748b" />
           {/* Notification Dot — only show when authenticated and has unread */}
@@ -86,10 +91,10 @@ export function AppHeader() {
         <TouchableOpacity
           activeOpacity={0.7}
           className={cn(
-            "h-10 w-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20",
+            "h-10 w-10 items-center justify-center rounded-full bg-primary-10 border border-primary-20",
             isRTL ? "mr-1" : "ml-1"
           )}
-          onPress={() => router.push('/(tabs)/profile')}
+          onPress={() => router.replace('/(tabs)/profile')}
         >
           <User size={18} color="#0f766e" />
         </TouchableOpacity>

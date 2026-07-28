@@ -22,15 +22,20 @@ export const moodService = {
     return apiClient.get<MoodTodayResponse>('/mood/today');
   },
 
-  getStats(): Promise<MoodStats> {
-    return apiClient.get<MoodStats>('/mood/stats');
+  async getStats(): Promise<MoodStats> {
+    const data = await apiClient.get<any>('/mood/stats');
+    return {
+      averageMood: data?.averageMood ?? data?.avgScore ?? 0,
+      streak: data?.streak ?? data?.currentStreak ?? 0,
+      totalEntries: data?.totalEntries ?? data?.totalEntries ?? 0,
+    };
   },
 
   async getChart(params?: DateRangeParams): Promise<MoodChartData> {
-    const points = await apiClient.get<MoodChartPoint[]>('/mood/chart', params);
+    const points = await apiClient.get<any[]>('/mood/chart', params);
     return {
       labels: points.map((p) => p.date),
-      data: points.map((p) => p.score),
+      data: points.map((p) => p.score ?? p.moodScore ?? 0),
     };
   },
 };

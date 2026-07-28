@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, Play, CheckCircle, Lock } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ import {
 } from '@/constants/journeys-data';
 import { getPersistedJourneysProgress } from '@/lib/token-storage';
 
-export default function JourneyDetailsPage() {
+export default function JourneyDetailPage() {
   const journeyId = getActiveJourneyRoute().journeyId;
   const [journey, setJourney] = useState<Journey | undefined>(() => journeysData.find((item) => item.id === journeyId));
 
@@ -54,22 +54,13 @@ export default function JourneyDetailsPage() {
 
     if (typeof unit.moduleIndex === 'number' && typeof unit.lessonIndex === 'number') {
       setActiveJourneyLessonRoute(journey.id, unit.moduleIndex, unit.lessonIndex);
-      router.push({
-        pathname: '/journeys/lesson',
-        params: {
-          journey: journey.id,
-          module: String(unit.moduleIndex),
-          lesson: String(unit.lessonIndex),
-        },
-      } as any);
-      return;
+      router.push('/journey-lesson' as any);
     }
   };
 
   return (
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Header Image */}
         <View className="relative h-64 w-full">
           <Image
             source={{ uri: journey.image }}
@@ -77,13 +68,13 @@ export default function JourneyDetailsPage() {
             resizeMode="cover"
           />
           <View className="absolute inset-0 bg-black/40" />
-          
-          <TouchableOpacity
+
+          <Pressable
             onPress={() => router.back()}
             className="absolute top-12 left-4 h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md"
           >
             <ArrowLeft size={24} color="white" />
-          </TouchableOpacity>
+          </Pressable>
 
           <View className="absolute bottom-6 right-4 left-4">
             <View
@@ -101,9 +92,7 @@ export default function JourneyDetailsPage() {
           </View>
         </View>
 
-        {/* Content */}
         <View className="px-4 py-6">
-          {/* Stats */}
           <View className="flex-row justify-between mb-8 bg-card p-4 rounded-xl border border-border shadow-sm">
             <View className="items-center flex-1 border-r border-border">
               <Text className="text-lg font-bold text-primary">{journey.progress}%</Text>
@@ -123,7 +112,7 @@ export default function JourneyDetailsPage() {
 
           <View className="gap-4">
             {units.map((unit, index) => (
-              <TouchableOpacity
+              <Pressable
                 key={unit.id ?? `${journey.id}-${index}`}
                 disabled={!!unit.isLocked}
                 onPress={() => openUnit(index)}
@@ -138,8 +127,8 @@ export default function JourneyDetailsPage() {
                   ) : unit.isLocked ? (
                     <Lock size={20} className="text-muted-foreground" color="#9ca3af" />
                   ) : (
-                    <View className={cn("h-8 w-8 rounded-full items-center justify-center bg-primary/10")}>
-                      <Play size={14} className="text-primary ml-0.5" color="#0284c7" fill="#0284c7" />
+                    <View className={cn("h-8 w-8 rounded-full items-center justify-center bg-emerald-100")}>
+                      <Play size={14} className="ml-0.5" color="#10b981" fill="#10b981" />
                     </View>
                   )}
                 </View>
@@ -155,11 +144,11 @@ export default function JourneyDetailsPage() {
                     {unit.description ?? ''}
                   </Text>
                 </View>
-                
+
                 <Text className="text-lg font-bold text-muted-foreground/20 ml-2">
                   {(index + 1).toString().padStart(2, '0')}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
           {units.length === 0 ? (
@@ -169,18 +158,17 @@ export default function JourneyDetailsPage() {
           ) : null}
         </View>
       </ScrollView>
-      
-      {/* Bottom Action Button (Sticky) */}
+
       <View className="p-4 bg-background border-t border-border">
-        <TouchableOpacity 
-            className={cn("w-full h-14 rounded-xl items-center justify-center shadow-md", allUnitsCompleted ? "bg-emerald-600" : "bg-primary")}
-            onPress={() => openUnit(nextUnitIndex)}
-            disabled={allUnitsCompleted || nextUnitIndex < 0}
+        <Pressable
+          className={cn("w-full h-14 rounded-xl items-center justify-center shadow-md", allUnitsCompleted ? "bg-emerald-600" : "bg-primary")}
+          onPress={() => openUnit(nextUnitIndex)}
+          disabled={allUnitsCompleted || nextUnitIndex < 0}
         >
-            <Text className="text-primary-foreground font-bold text-lg">
-              {allUnitsCompleted ? 'تم إكمال الرحلة' : 'تابع الرحلة'}
-            </Text>
-        </TouchableOpacity>
+          <Text className="text-primary-foreground font-bold text-lg">
+            {allUnitsCompleted ? 'تم إكمال الرحلة' : 'تابع الرحلة'}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

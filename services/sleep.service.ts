@@ -22,8 +22,14 @@ export const sleepService = {
     return apiClient.get<SleepTodayResponse>('/sleep/today');
   },
 
-  getStats(): Promise<SleepStats> {
-    return apiClient.get<SleepStats>('/sleep/stats');
+  async getStats(): Promise<SleepStats> {
+    const data = await apiClient.get<any>('/sleep/stats');
+    return {
+      averageHours: data?.averageHours ?? data?.avgHours ?? 0,
+      averageQuality: data?.averageQuality ?? data?.avgQuality ?? 0,
+      streak: data?.streak ?? 0,
+      totalEntries: data?.totalEntries ?? data?.count ?? 0,
+    };
   },
 
   async getChart(params?: DateRangeParams): Promise<SleepChartData> {

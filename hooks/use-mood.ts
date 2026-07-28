@@ -36,6 +36,7 @@ export function useLogMood() {
     mutationFn: (data: CreateMoodPayload) => moodService.logMood(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mood'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 }

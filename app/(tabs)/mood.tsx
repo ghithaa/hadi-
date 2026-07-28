@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { AppHeader } from '@/components/app-header';
 import { LineChart } from 'react-native-chart-kit';
@@ -19,6 +19,7 @@ const moods = [
 const screenWidth = Dimensions.get("window").width;
 
 const chartConfig = {
+  backgroundColor: "transparent",
   backgroundGradientFrom: "#ffffff",
   backgroundGradientTo: "#ffffff",
   backgroundGradientFromOpacity: 0,
@@ -32,6 +33,19 @@ const chartConfig = {
   propsForLabels: { fontSize: 10, fontWeight: 'bold' },
 };
 
+const getDayName = (dateStr: string, isRTL: boolean) => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  
+  if (isRTL) {
+    const daysAr = ["ح", "ن", "ث", "ر", "خ", "ج", "س"];
+    return daysAr[date.getDay()];
+  } else {
+    const daysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return daysEn[date.getDay()];
+  }
+};
+
 export default function MoodPage() {
   const { t, isRTL, flexDir, textAlign, alignItems, justifyContent } = useLocalization();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
@@ -39,31 +53,38 @@ export default function MoodPage() {
   const { data: chartData, isLoading: chartLoading } = useMoodChart();
   const { data: stats } = useMoodStats();
   const { data: todayEntry } = useMoodToday();
-
   const hasLoggedToday = todayEntry?.logged ?? false;
+  
+  const formattedChartData = useMemo(() => {
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
 
-  const formattedChartData = chartData
-    ? {
-        labels: chartData.labels ?? [],
-        datasets: [
-          {
-            data: (chartData.data?.length ?? 0) > 0 ? chartData.data : [0],
-            color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-            strokeWidth: 3,
-          },
-          { data: [5], withDots: false, color: () => 'transparent' }
-        ],
-      }
-    : {
-        labels: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"],
-        datasets: [
-          { data: [3, 4, 2, 5, 4, 3, 4], color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, strokeWidth: 3 },
-          { data: [5], withDots: false, color: () => 'transparent' }
-        ],
-      };
+    const labels = last7Days.map(dateStr => getDayName(dateStr, isRTL));
+    const data = last7Days.map(dateStr => {
+      const matchIndex = chartData?.labels?.findIndex(l => l && l.startsWith(dateStr));
+      const val = (matchIndex !== undefined && matchIndex !== -1) ? Number(chartData?.data?.[matchIndex]) : 0;
+      return isNaN(val) ? 0 : val;
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+          strokeWidth: 3,
+        },
+        { data: [5], withDots: false, color: () => 'transparent' }
+      ]
+    };
+  }, [chartData, isRTL]);
+    // console.log(formattedChartData, stats, todayEntry);
+
 
   const handleMoodSelect = async (level: number) => {
-    if (hasLoggedToday) return;
     setSelectedMood(level);
     try {
       await logMood.mutateAsync({ moodScore: level });
@@ -85,13 +106,13 @@ export default function MoodPage() {
       <View className="bg-white pb-2">
         <AppHeader />
       </View>
-
-      <View className="absolute inset-0 overflow-hidden opacity-[0.05]">
+  
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden opacity-[0.05]">
         <View className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-emerald-100" style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }} />
         <View className="absolute top-1/4 -right-40 h-[350px] w-[350px] rounded-full bg-blue-100" style={{ transform: [{ scaleX: 1.2 }] }} />
         <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-primary/20" />
       </View>
-
+  
       <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={true}>
         <View className="mt-8 mb-8">
           <Text className={cn("text-2xl font-bold text-slate-900 mb-2", textAlign())}>كيف تشعر اليوم؟</Text>
@@ -99,31 +120,33 @@ export default function MoodPage() {
             {hasLoggedToday ? 'لقد سجلت مزاجك اليوم بالفعل' : 'سجل حالتك المزاجية لنتمكن من مساعدتك بشكل أفضل'}
           </Text>
         </View>
-
+  
         <View className={cn("justify-between mb-8", flexDir())}>
-          {moods.map((mood) => (
-            <TouchableOpacity
-              key={mood.level}
-              onPress={() => handleMoodSelect(mood.level)}
-              activeOpacity={hasLoggedToday ? 1 : 0.8}
-              disabled={hasLoggedToday || logMood.isPending}
-              className={cn(
-                "items-center justify-between h-24 w-[18%] rounded-[24px] border py-4 transition-all",
-                (selectedMood === mood.level || todayEntry?.entry?.moodScore === mood.level)
-                  ? "bg-white border-emerald-500 shadow-xl shadow-emerald-500/20 scale-105"
-                  : "bg-white border-white shadow-sm shadow-black/5",
-                hasLoggedToday && todayEntry?.entry?.moodScore !== mood.level && "opacity-40"
-              )}
-            >
-              <Text className="text-3xl">{mood.emoji}</Text>
-              <Text className={cn(
-                "text-[10px] font-bold uppercase text-center",
-                (selectedMood === mood.level || todayEntry?.entry?.moodScore === mood.level) ? "text-emerald-600" : "text-slate-400"
-              )}>
-                {mood.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {moods.map((mood) => {
+            const isSelected = selectedMood === mood.level || todayEntry?.entry?.moodScore === mood.level;
+            return (
+              <TouchableOpacity
+                key={mood.level}
+                onPress={() => handleMoodSelect(mood.level)}
+                activeOpacity={0.8}
+                disabled={logMood.isPending}
+                className={cn(
+                  "items-center justify-between h-24 w-[18%] rounded-[24px] border py-4 transition-all active:scale-95",
+                  isSelected
+                    ? "bg-white border-emerald-500 shadow-xl shadow-emerald-500/20 scale-105"
+                    : "bg-white border-slate-100 shadow-sm shadow-black/5"
+                )}
+              >
+                <Text className="text-3xl">{mood.emoji}</Text>
+                <Text className={cn(
+                  "text-[10px] font-bold uppercase text-center",
+                  isSelected ? "text-emerald-600" : "text-slate-400"
+                )}>
+                  {mood.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View className="bg-white border border-white/60 rounded-[35px] py-6 mb-8 shadow-2xl overflow-hidden" style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}>
@@ -142,25 +165,29 @@ export default function MoodPage() {
               <ActivityIndicator color="#10b981" />
             </View>
           ) : (
-            <LineChart
-              data={formattedChartData}
-              width={screenWidth - 40}
-              height={220}
-              fromZero={true}
-              segments={5}
-              chartConfig={chartConfig}
-              bezier
-              style={{
-                marginVertical: 8,
-                borderRadius: 16,
-                paddingRight: 20, // Extra padding for labels
-              }}
-              withVerticalLines={false}
-              withHorizontalLines={true}
-              withInnerLines={true}
-              withOuterLines={false}
-              withShadow={true}
-            />
+            <View style={{ direction: 'ltr', alignItems: 'center', width: '100%' }}>
+              <LineChart
+                data={formattedChartData}
+                width={screenWidth - 40}
+                height={220}
+                fromZero={true}
+                segments={5}
+                chartConfig={chartConfig}
+                bezier
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16,
+                  paddingRight: 20, // Extra padding for labels
+                  direction: 'ltr',
+                  backgroundColor: 'transparent',
+                }}
+                withVerticalLines={false}
+                withHorizontalLines={true}
+                withInnerLines={true}
+                withOuterLines={false}
+                withShadow={true}
+              />
+            </View>
           )}
         </View>
 

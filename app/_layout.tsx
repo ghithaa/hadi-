@@ -2,8 +2,13 @@ import '../global.css';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/react-query';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -70,7 +75,10 @@ function AppContent() {
               <Stack.Screen name="intro" options={{ headerShown: false }} />
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="breathing-exercise/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="journey-detail" options={{ headerShown: false }} />
+              <Stack.Screen name="journey-lesson" options={{ headerShown: false }} />
               <Stack.Screen name="journeys/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="journeys/lesson" options={{ headerShown: false }} />
               <Stack.Screen name="profile-details/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
             </Stack>

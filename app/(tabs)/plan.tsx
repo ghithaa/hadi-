@@ -3,11 +3,29 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { AppHeader } from '@/components/app-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RotateCcw, Check, ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { Sparkles, RotateCcw, Check, ArrowLeft, ArrowRight, Wind, Heart, BookOpen, Flame } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { useActivePlan, useGeneratePlan, useTogglePlanTask } from '@/hooks/use-plans';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useThemeMode } from '@/hooks/use-color-scheme';
+
+function getTaskIcon(title: string) {
+  const lower = (title || '').toLowerCase();
+  if (lower.includes('تنفس') || lower.includes('breath') || lower.includes('استرخ') || lower.includes('هدوء')) {
+    return <Wind size={20} color="#0f766e" />;
+  }
+  if (lower.includes('امتنان') || lower.includes('gratitude') || lower.includes('شكر')) {
+    return <Heart size={20} color="#e11d48" />;
+  }
+  if (lower.includes('كتابة') || lower.includes('سجل') || lower.includes('write') || lower.includes('دفتر') || lower.includes('مفكرة')) {
+    return <BookOpen size={20} color="#4f46e5" />;
+  }
+  if (lower.includes('مشي') || lower.includes('رياضة') || lower.includes('walk') || lower.includes('جري') || lower.includes('تمرين') || lower.includes('نشاط')) {
+    return <Flame size={20} color="#d97706" />;
+  }
+  return <Sparkles size={20} color="#0f766e" />;
+}
 
 const profileQuestions = [
   {
@@ -47,6 +65,7 @@ const profileQuestions = [
 
 export default function PlanPage() {
   const { isRTL, flexDir, textAlign, alignItems } = useLocalization();
+  const { colorScheme } = useThemeMode();
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -87,47 +106,127 @@ export default function PlanPage() {
     );
   }
 
-  // Show active plan if exists
-  if (activePlan && !started) {
-    return (
-      <View className="flex-1 bg-background">
-        <AppHeader />
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+  const currentQ = profileQuestions[step];
+  const progress = ((step + 1) / profileQuestions.length) * 100;
+
+  const renderContent = () => {
+    // 1. Show active plan if exists and not started questionnaire
+    if (activePlan && !started) {
+      return (
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           <View className="p-4 gap-6 pt-4">
-            <Card className="bg-primary border-none shadow-md">
-              <CardContent className="p-6">
-                <View className={cn("justify-between items-start", flexDir())}>
-                  <TouchableOpacity onPress={() => setStarted(true)} className="bg-white/20 p-2 rounded-full">
-                    <RotateCcw color="white" size={20} />
-                  </TouchableOpacity>
-                  <View className={cn("flex-1", isRTL ? "ml-3" : "mr-3")}>
-                    <Text className={cn("text-2xl font-bold text-white mb-1", textAlign())}>{activePlan.title}</Text>
-                    <Text className={cn("text-primary-foreground/90 font-medium", textAlign())}>{activePlan.description}</Text>
-                  </View>
+            <View 
+              className="relative bg-primary rounded-[28px] overflow-hidden p-6"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+              }}
+            >
+              <View pointerEvents="none" className="absolute -right-6 -bottom-6" style={{ opacity: 0.08 }}>
+                <Sparkles size={130} color="white" />
+              </View>
+              <View className={cn("justify-between items-start", flexDir())}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setStarted(true)}
+                  className="p-2.5 rounded-full border"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <RotateCcw color="white" size={18} />
+                </TouchableOpacity>
+                <View className={cn("flex-1", isRTL ? "ml-3" : "mr-3")}>
+                  <Text className={cn("text-2xl font-bold text-white mb-2", textAlign())}>{activePlan.title}</Text>
+                  <Text className={cn("text-white/90 font-semibold text-sm leading-6", textAlign())}>{activePlan.description}</Text>
                 </View>
-              </CardContent>
-            </Card>
+              </View>
+            </View>
 
             <View>
-              <Text className={cn("text-xl font-bold text-foreground mb-3", textAlign())}>{isRTL ? 'المهام اليومية' : 'Daily Tasks'}</Text>
-              <View className="gap-3">
+              <Text className={cn("text-xl font-bold text-foreground mb-4", textAlign())}>{isRTL ? 'المهام اليومية' : 'Daily Tasks'}</Text>
+              <View className="gap-3.5">
                 {activePlan.tasks?.map((task) => (
                   <TouchableOpacity
                     key={task.id}
                     onPress={() => handleToggleTask(task.id, task.isCompleted)}
                     disabled={toggleTask.isPending}
-                    className={cn("items-center gap-3 p-4 rounded-xl border border-border bg-card shadow-sm", flexDir())}
+                    activeOpacity={0.85}
+                    className={cn(
+                      "items-center gap-4 p-4 rounded-[22px] border bg-card",
+                      flexDir()
+                    )}
+                    style={{
+                      opacity: task.isCompleted ? 0.6 : 1,
+                      backgroundColor: task.isCompleted
+                        ? (colorScheme === 'dark' ? 'rgba(15, 23, 42, 0.1)' : 'rgba(241, 245, 249, 0.3)')
+                        : undefined,
+                      borderColor: task.isCompleted
+                        ? (colorScheme === 'dark' ? '#1e293b' : '#f1f5f9')
+                        : (colorScheme === 'dark' ? '#334155' : '#e2e8f0'),
+                      borderLeftWidth: !isRTL ? 4 : 1,
+                      borderRightWidth: isRTL ? 4 : 1,
+                      borderLeftColor: !isRTL
+                        ? (task.isCompleted ? (colorScheme === 'dark' ? '#475569' : '#cbd5e1') : '#0f766e')
+                        : (task.isCompleted ? (colorScheme === 'dark' ? '#1e293b' : '#f1f5f9') : (colorScheme === 'dark' ? '#334155' : '#e2e8f0')),
+                      borderRightColor: isRTL
+                        ? (task.isCompleted ? (colorScheme === 'dark' ? '#475569' : '#cbd5e1') : '#0f766e')
+                        : (task.isCompleted ? (colorScheme === 'dark' ? '#1e293b' : '#f1f5f9') : (colorScheme === 'dark' ? '#334155' : '#e2e8f0')),
+                      shadowColor: '#000',
+                      shadowOpacity: 0.03,
+                      shadowRadius: 6,
+                      shadowOffset: { width: 0, height: 2 },
+                    }}
                   >
-                    <View className={cn("h-6 w-6 rounded-full border-2 items-center justify-center", task.isCompleted ? "border-primary bg-primary" : "border-muted-foreground")}>
-                      {task.isCompleted && <Check size={14} color="white" />}
+                    <View 
+                      className="h-6 w-6 rounded-full border-2 items-center justify-center bg-card"
+                      style={{
+                        borderColor: task.isCompleted ? '#0f766e' : (colorScheme === 'dark' ? '#475569' : '#cbd5e1'),
+                        backgroundColor: task.isCompleted ? '#0f766e' : undefined,
+                      }}
+                    >
+                      {task.isCompleted && <Check size={12} strokeWidth={3.5} color="white" />}
                     </View>
+
+                    <View className="h-10 w-10 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                      {getTaskIcon(task.title)}
+                    </View>
+
                     <View className={cn("flex-1", alignItems('start'))}>
-                      <Text className={cn("font-bold text-foreground text-base", textAlign(), task.isCompleted && "line-through opacity-60")}>{task.title}</Text>
-                      <Text className={cn("text-sm text-muted-foreground", textAlign())}>{task.description}</Text>
+                      <Text 
+                        className={cn("font-bold text-foreground text-base mb-1", textAlign())}
+                        style={{
+                          textDecorationLine: task.isCompleted ? 'line-through' : 'none',
+                          opacity: task.isCompleted ? 0.6 : 1
+                        }}
+                      >
+                        {task.title}
+                      </Text>
+                      <Text className={cn("text-xs text-muted-foreground leading-5 font-medium", textAlign())}>{task.description}</Text>
                     </View>
+
                     {task.frequency && (
-                      <View className="bg-secondary px-2 py-1 rounded-md">
-                        <Text className="text-xs font-medium text-secondary-foreground">{task.frequency}</Text>
+                      <View 
+                        className="px-2.5 py-1 rounded-full"
+                        style={{
+                          backgroundColor: task.isCompleted
+                            ? (colorScheme === 'dark' ? '#1e293b' : '#f1f5f9')
+                            : (colorScheme === 'dark' ? 'rgba(15, 118, 110, 0.2)' : 'rgba(15, 118, 110, 0.1)')
+                        }}
+                      >
+                        <Text 
+                          className="text-[9px] font-bold tracking-wide"
+                          style={{
+                            color: task.isCompleted
+                              ? (colorScheme === 'dark' ? '#94a3b8' : '#64748b')
+                              : '#0f766e'
+                          }}
+                        >
+                          {task.frequency}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -136,17 +235,17 @@ export default function PlanPage() {
             </View>
           </View>
         </ScrollView>
-      </View>
-    );
-  }
+      );
+    }
 
-  // No plan — show intro or questionnaire
-  if (!started) {
-    return (
-      <View className="flex-1 bg-background">
-        <AppHeader />
+    // 2. Show Intro screen if not active plan and not started questionnaire
+    if (!started) {
+      return (
         <View className="flex-1 items-center justify-center p-6">
-          <View className="mb-8 h-32 w-32 items-center justify-center rounded-full bg-primary/10">
+          <View 
+            className="mb-8 h-32 w-32 items-center justify-center rounded-full"
+            style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(15, 118, 110, 0.2)' : 'rgba(15, 118, 110, 0.1)' }}
+          >
             <Sparkles size={64} color="#0284c7" />
           </View>
           <Text className="text-3xl font-bold text-center text-foreground mb-4">{isRTL ? 'ابدأ خطتك المخصصة' : 'Start Your Custom Plan'}</Text>
@@ -159,26 +258,39 @@ export default function PlanPage() {
             <Text className="text-lg font-bold text-primary-foreground">{isRTL ? 'ابدأ الآن' : 'Start Now'}</Text>
           </Button>
         </View>
-      </View>
-    );
-  }
+      );
+    }
 
-  const currentQ = profileQuestions[step];
-  const progress = ((step + 1) / profileQuestions.length) * 100;
-
-  return (
-    <View className="flex-1 bg-background">
-      <AppHeader />
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+    // 3. Show Questionnaire screen
+    return (
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <View className="p-5 gap-6">
           <View className="flex-1 justify-center pt-6">
-            <TouchableOpacity onPress={() => setStarted(false)} className={cn("mb-4 items-center gap-1", flexDir(), isRTL ? "self-end" : "self-start")}>
-              {isRTL ? null : <ArrowLeft size={18} color="#64748b" />}
-              <Text className="text-muted-foreground font-bold">{isRTL ? 'عودة' : 'Back'}</Text>
-              {isRTL ? <ArrowRight size={18} color="#64748b" /> : null}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setStarted(false)}
+              className={cn(
+                "items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-full mb-4",
+                flexDir(),
+                isRTL ? "self-end" : "self-start"
+              )}
+            >
+              {isRTL ? null : <ArrowLeft size={16} color="#475569" />}
+              <Text className="text-slate-700 dark:text-slate-300 font-bold text-xs">
+                {isRTL ? 'عودة' : 'Back'}
+              </Text>
+              {isRTL ? <ArrowRight size={16} color="#475569" /> : null}
             </TouchableOpacity>
 
-            <View className="bg-card border border-border/40 rounded-[28px] p-6 shadow-sm">
+            <View 
+              className="bg-card border border-slate-100 dark:border-slate-800 rounded-[28px] p-6"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.03,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+              }}
+            >
               <View className="mb-6">
                 <Text className={cn("text-xl font-bold text-foreground mb-1", textAlign())}>{isRTL ? 'بناء خطتك الشخصية' : 'Build Your Personal Plan'}</Text>
                 <Text className={cn("text-sm text-muted-foreground", textAlign())}>{isRTL ? 'اجب على بعض الاسئلة لنصمم لك خطة تناسب احتياجاتك' : 'Answer a few questions so we can design a plan that suits your needs'}</Text>
@@ -190,17 +302,26 @@ export default function PlanPage() {
                   <Text className="text-sm font-bold text-foreground">
                     {isRTL ? `السؤال ${step + 1}` : `Question ${step + 1}`}
                   </Text>
-                  <View className="bg-primary/10 px-3 py-1 rounded-full">
+                  <View 
+                    className="px-3 py-1 rounded-full"
+                    style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(15, 118, 110, 0.2)' : 'rgba(15, 118, 110, 0.1)' }}
+                  >
                     <Text className="text-xs font-bold text-primary">{step + 1} / {profileQuestions.length}</Text>
                   </View>
                 </View>
-                <View className="h-2.5 w-full bg-secondary/60 rounded-full overflow-hidden">
+                <View className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
                   <View className="h-full bg-primary rounded-full" style={{ width: `${progress}%`, alignSelf: isRTL ? 'flex-end' : 'flex-start' }} />
                 </View>
               </View>
 
               {/* Question */}
-              <View className="mb-8 rounded-[24px] bg-primary/5 border border-primary/10 p-6">
+              <View 
+                className="mb-8 rounded-[24px] border p-6"
+                style={{
+                  backgroundColor: colorScheme === 'dark' ? 'rgba(15, 118, 110, 0.08)' : 'rgba(15, 118, 110, 0.04)',
+                  borderColor: colorScheme === 'dark' ? 'rgba(15, 118, 110, 0.2)' : 'rgba(15, 118, 110, 0.1)',
+                }}
+              >
                 <Text className={cn("text-[18px] font-bold text-foreground leading-8 text-center")}>
                   {isRTL ? currentQ.question : currentQ.questionEn}
                 </Text>
@@ -214,7 +335,10 @@ export default function PlanPage() {
                     onPress={() => handleAnswer(option.value)}
                     disabled={generatePlan.isPending}
                     activeOpacity={0.7}
-                    className="w-full p-4 rounded-[20px] border-2 border-border/60 bg-card items-center justify-center active:bg-primary/5 active:border-primary/30"
+                    className="w-full p-4 rounded-[20px] border-2 bg-card items-center justify-center"
+                    style={{
+                      borderColor: colorScheme === 'dark' ? '#334155' : '#e2e8f0',
+                    }}
                   >
                     <Text className="text-center font-bold text-foreground text-[16px]">{isRTL ? option.label : option.labelEn}</Text>
                   </TouchableOpacity>
@@ -231,6 +355,13 @@ export default function PlanPage() {
           </View>
         </View>
       </ScrollView>
+    );
+  };
+
+  return (
+    <View className="flex-1 bg-background">
+      <AppHeader />
+      {renderContent()}
     </View>
   );
 }

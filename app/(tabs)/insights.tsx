@@ -25,8 +25,8 @@ export default function InsightsPage() {
       label: t('insights.stat.mood'),
       value: overview?.moodAverage ? `${overview.moodAverage.toFixed(1)}/5` : `0/5`,
       icon: Smile,
-      color: '#0284c7',
-      bg: 'bg-blue-500/10',
+      color: '#0f766e',
+      bg: 'bg-primary/10',
     },
     {
       label: t('insights.stat.breathing'),
@@ -51,51 +51,50 @@ export default function InsightsPage() {
     },
   ];
 
-  const defaultLabels = Array.from({ length: 7 }).map((_, i) => {
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return `${d.getDate()}/${d.getMonth() + 1}`;
+    return d.toISOString().split('T')[0];
   });
 
-  const moodData = moodTrends && moodTrends.length > 0
-    ? {
-      labels: moodTrends.slice(-7).map((t) => {
-        const d = new Date(t.date);
-        return `${d.getDate()}/${d.getMonth() + 1}`;
-      }),
-      datasets: [
-        { data: moodTrends.slice(-7).map((t) => t.score) },
-        { data: [5], withDots: false, color: () => 'transparent' } // Force max scale to 5
-      ],
-    }
-    : {
-      labels: defaultLabels,
-      datasets: [
-        { data: [0, 0, 0, 0, 0, 0, 0] },
-        { data: [5], withDots: false, color: () => 'transparent' }
-      ],
-    };
+  const moodData = {
+    labels: last7Days.map(dateStr => {
+      const d = new Date(dateStr);
+      return `${d.getDate()}/${d.getMonth() + 1}`;
+    }),
+    datasets: [
+      {
+        data: last7Days.map(dateStr => {
+          const match = moodTrends?.find(t => t.date && t.date.startsWith(dateStr));
+          const val = match ? Number(match.score) : 0;
+          return isNaN(val) ? 0 : val;
+        })
+      },
+      { data: [5], withDots: false, color: () => 'transparent' }
+    ]
+  };
 
-  const sleepData = sleepChart && (sleepChart.data?.length ?? 0) > 0
-    ? {
-      labels: sleepChart.labels.slice(-7).map(dateStr => {
-        const d = new Date(dateStr);
-        return `${d.getDate()}/${d.getMonth() + 1}`;
-      }),
-      datasets: [
-        { data: sleepChart.data.slice(-7) },
-        { data: [12], withDots: false, color: () => 'transparent' } // Force max scale to 12
-      ]
-    }
-    : {
-      labels: defaultLabels,
-      datasets: [
-        { data: [0, 0, 0, 0, 0, 0, 0] },
-        { data: [12], withDots: false, color: () => 'transparent' }
-      ]
-    };
+  const sleepData = {
+    labels: last7Days.map(dateStr => {
+      const d = new Date(dateStr);
+      return `${d.getDate()}/${d.getMonth() + 1}`;
+    }),
+    datasets: [
+      {
+        data: last7Days.map(dateStr => {
+          const matchIndex = sleepChart?.labels?.findIndex(l => l && l.startsWith(dateStr));
+          const val = (matchIndex !== undefined && matchIndex !== -1) ? Number(sleepChart?.data?.[matchIndex]) : 0;
+          return isNaN(val) ? 0 : val;
+        })
+      },
+      { data: [12], withDots: false, color: () => 'transparent' }
+    ]
+  };
+
+
 
   const chartConfigBase = {
+    backgroundColor: 'transparent',
     backgroundGradientFrom: '#ffffff',
     backgroundGradientFromOpacity: 0,
     backgroundGradientTo: '#ffffff',
@@ -107,6 +106,7 @@ export default function InsightsPage() {
   };
 
   const screenWidth = Dimensions.get('window').width;
+  const chartWidth = screenWidth - 88;
 
   return (
     <View className="flex-1 bg-background">
@@ -135,7 +135,14 @@ export default function InsightsPage() {
                       <Icon size={24} color={stat.color} />
                     </View>
                     <Text className="text-2xl font-bold text-foreground mb-1">{stat.value}</Text>
-                    <Text className="text-[11px] font-bold text-muted-foreground/80 lowercase">{stat.label}</Text>
+                    <Text
+                      className="text-[10px] font-bold text-muted-foreground/80"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.82}
+                    >
+                      {stat.label}
+                    </Text>
                   </CardContent>
                 </Card>
               );
@@ -143,10 +150,19 @@ export default function InsightsPage() {
           </View>
         )}
 
-        <Card className="border-none shadow-md shadow-black/5 rounded-[40px] mb-8 overflow-hidden bg-white dark:bg-card">
+        <Card
+          className="border rounded-[40px] mb-8 overflow-hidden"
+          style={{
+            // backgroundColor: 'rgba(15, 118, 110, 0.03)',
+            borderColor: 'rgba(15, 118, 110, 0.10)',
+            shadowColor: '#000',
+            shadowOpacity: 0.04,
+            shadowRadius: 18,
+          }}
+        >
           <CardHeader className={cn("pb-0 pt-6 px-6", alignItems('start'))}>
-            <CardTitle className="text-xl font-bold text-foreground">{t('insights.chart.title')}</CardTitle>
-            <CardDescription className={cn("mt-1", textAlign())}>{t('insights.chart.desc')}</CardDescription>
+            <CardTitle className={cn("text-xl font-bold text-foreground w-full", textAlign())}>{t('insights.chart.title')}</CardTitle>
+            <CardDescription className={cn("mt-1 w-full", textAlign())}>{t('insights.chart.desc')}</CardDescription>
           </CardHeader>
           <CardContent className="p-0 pt-4 pb-4">
             {moodLoading ? (
@@ -154,15 +170,16 @@ export default function InsightsPage() {
                 <ActivityIndicator size="small" color="#0f766e" />
               </View>
             ) : (
-              <View className="items-center w-full">
+              <View className="items-center w-full px-2" style={{ direction: 'ltr' }}>
                 <LineChart
                   data={moodData}
-                  width={screenWidth - 40} // padding from screen edges
-                  height={220}
+                  width={chartWidth}
+                  height={210}
                   chartConfig={{
                     ...chartConfigBase,
-                    color: (opacity = 1) => `rgba(14, 118, 110, ${opacity})`, // teal-700
-                    propsForDots: { r: "5", strokeWidth: "2", stroke: "#0f766e" },
+                    color: (opacity = 1) => `rgba(15, 118, 110, ${Math.max(opacity, 0.35)})`,
+                    propsForDots: { r: "5", strokeWidth: "2", stroke: "#0f766e", fill: "#149484" },
+                    propsForBackgroundLines: { stroke: 'rgba(15, 118, 110, 0.10)' },
                   }}
                   bezier
                   fromZero={true}
@@ -172,7 +189,8 @@ export default function InsightsPage() {
                   style={{
                     marginVertical: 8,
                     borderRadius: 16,
-                    paddingRight: 20, // Extra padding for labels
+                    direction: 'ltr',
+                    backgroundColor: 'transparent',
                   }}
                 />
               </View>
@@ -180,22 +198,36 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-md shadow-black/5 rounded-[40px] mb-8 overflow-hidden bg-white dark:bg-card">
+        <Card
+          className="border rounded-[40px] mb-8 overflow-hidden relative"
+          style={{
+            // backgroundColor: 'rgba(59, 130, 246, 0.03)',
+            borderColor: 'rgba(59, 130, 246, 0.10)',
+            shadowColor: '#000',
+            shadowOpacity: 0.04,
+            shadowRadius: 18,
+          }}
+        >
           <CardHeader className={cn("pb-0 pt-6 px-6", alignItems('start'))}>
-            <CardTitle className="text-xl font-bold text-foreground">{t('insights.chart.sleep.title')}</CardTitle>
-            <CardDescription className={cn("mt-1", textAlign())}>{t('insights.chart.sleep.desc')}</CardDescription>
+            <View className={cn("items-center gap-2", flexDir())}>
+              <CardTitle className="text-xl font-bold text-foreground">{t('insights.chart.sleep.title')}</CardTitle>
+              <View className="bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+                <Text className="text-[10px] font-bold text-primary">{isRTL ? "قريباً" : "Soon"}</Text>
+              </View>
+            </View>
+            <CardDescription className={cn("mt-1 w-full", textAlign())}>{t('insights.chart.sleep.desc')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-0 pt-4 pb-4">
+          <CardContent className="p-0 pt-4 pb-4 opacity-40">
             {sleepLoading ? (
               <View className="h-56 items-center justify-center">
                 <ActivityIndicator size="small" color="#3b82f6" />
               </View>
             ) : (
-              <View className="items-center w-full">
+              <View className="items-center w-full px-2" style={{ direction: 'ltr' }}>
                 <BarChart
                   data={sleepData}
-                  width={screenWidth - 40}
-                  height={220}
+                  width={chartWidth}
+                  height={210}
                   yAxisLabel=""
                   yAxisSuffix="h"
                   fromZero={true}
@@ -203,11 +235,13 @@ export default function InsightsPage() {
                   chartConfig={{
                     ...chartConfigBase,
                     color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`, // blue-500
+                    propsForBackgroundLines: { stroke: 'rgba(59, 130, 246, 0.10)' },
                   }}
                   style={{
                     marginVertical: 8,
                     borderRadius: 16,
-                    paddingRight: 20,
+                    direction: 'ltr',
+                    backgroundColor: 'transparent',
                   }}
                   showValuesOnTopOfBars
                   withInnerLines={true}
@@ -216,6 +250,8 @@ export default function InsightsPage() {
             )}
           </CardContent>
         </Card>
+
+
 
         <TouchableOpacity activeOpacity={0.9} className="mb-10">
           <View className="relative overflow-hidden rounded-[36px] bg-primary p-7 shadow-xl shadow-primary/20">

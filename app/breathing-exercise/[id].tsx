@@ -5,19 +5,27 @@ import { Play, Pause, RotateCcw, Volume2, X } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { patterns, BreathingPhase } from '@/constants/breathing-patterns';
 import Svg, { Circle } from 'react-native-svg';
-import { useLogBreathingSession } from '@/hooks/use-breathing';
+import { useLogBreathingSession, useBreathingPatterns } from '@/hooks/use-breathing';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function BreathingExercisePage() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const pattern = patterns.find(p => p.id === id) || patterns[0];
+  const { data: serverPatterns } = useBreathingPatterns();
+  const localId = id === 'relax' ? '4-7-8' : id === 'energize' ? 'energy' : id;
+  const pattern = (serverPatterns?.find(p => p.id === id) || patterns.find(p => p.id === localId) || patterns[0]);
 
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<BreathingPhase>('inhale');
   const [cycle, setCycle] = useState(1);
   const [timeLeft, setTimeLeft] = useState(pattern.timings.inhale / 1000);
+
+  // Sync timeLeft when pattern changes
+  useEffect(() => {
+    setTimeLeft(pattern.timings.inhale / 1000);
+  }, [pattern]);
+
   const startTimeRef = useRef<number | null>(null);
   const logBreathingSession = useLogBreathingSession();
   

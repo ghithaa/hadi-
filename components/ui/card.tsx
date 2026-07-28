@@ -27,7 +27,7 @@ export function CardContent({ className, children, ...props }: CardProps) {
 
 export function CardHeader({ className, children, ...props }: CardProps) {
   return (
-    <View className={cn("flex flex-col space-y-1.5 p-6", className)} {...props}>
+    <View className={cn("flex flex-col space-y-1.5 p-6 ", className)} {...props}>
       {children}
     </View>
   );

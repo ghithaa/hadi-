@@ -4,7 +4,7 @@ import { AppHeader } from '@/components/app-header';
 import * as ImagePicker from 'expo-image-picker';
 import { Upload, RefreshCw, Palette, Shapes, Lightbulb, ArrowRight, ArrowLeft, Loader2, Sparkles } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
-import { useAnalyzeDrawing, useDrawingById } from '@/hooks/use-drawing';
+import { useAnalyzeDrawing, useDrawingById, useDrawingHistory } from '@/hooks/use-drawing';
 import { useLocalization } from '@/context/LocalizationContext';
 
 export default function DrawingPage() {
@@ -18,9 +18,10 @@ export default function DrawingPage() {
 
   const analyzeDrawing = useAnalyzeDrawing();
   const { data: pollingData } = useDrawingById(drawingId);
+  const { data: historyList } = useDrawingHistory();
 
   const result = pollingData?.status === 'completed' ? pollingData : null;
-  const isAnalyzing = analyzeDrawing.isPending || (!!drawingId && pollingData?.status === 'processing');
+  const isAnalyzing = analyzeDrawing.isPending || (!!drawingId && (pollingData?.status === 'processing' || pollingData?.status === 'pending'));
 
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -61,7 +62,7 @@ export default function DrawingPage() {
         <AppHeader />
       </View>
 
-      <View className="absolute inset-0 overflow-hidden opacity-[0.1]">
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden opacity-[0.1]">
         <View className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-orange-200/20" style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }} />
         <View className="absolute top-1/4 -right-40 h-[350px] w-[350px] rounded-full bg-primary/10" style={{ transform: [{ scaleX: 1.2 }] }} />
         <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-rose-200/20" />
@@ -111,15 +112,75 @@ export default function DrawingPage() {
                     : 'This analysis is preliminary and does not constitute an official medical or psychological diagnosis. If you have serious concerns, please consult a specialist.'}
                 </Text>
               </View>
+
+              {historyList && historyList.length > 0 && (
+                <View className="gap-4 mt-6">
+                  <Text className={cn("text-lg font-bold text-foreground", textAlign())}>
+                    {isRTL ? 'التحليلات السابقة' : 'Previous Analyses'}
+                  </Text>
+                  <View className="gap-3">
+                    {historyList.map((item) => {
+                      const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) : '';
+                      return (
+                        <TouchableOpacity
+                          key={item.id}
+                          onPress={() => {
+                            setChildName(item.childName || '');
+                            setChildAge(item.childAge || '');
+                            setDrawingId(item.id);
+                          }}
+                          activeOpacity={0.8}
+                          className={cn("bg-card border border-border/40 p-3.5 rounded-[22px] items-center gap-3 shadow-sm", flexDir())}
+                        >
+                          {item.imagePath ? (
+                            <Image source={{ uri: item.imagePath }} className="h-14 w-14 rounded-xl bg-slate-100" resizeMode="cover" />
+                          ) : (
+                            <View className="h-14 w-14 rounded-xl bg-primary/10 items-center justify-center">
+                              <Palette color="hsl(var(--primary))" size={20} />
+                            </View>
+                          )}
+                          <View className="flex-1">
+                            <Text className={cn("font-bold text-slate-800 text-sm", textAlign())}>
+                              {isRTL 
+                                ? `تحليل رسمة ${item.childName || 'طفلك'}`
+                                : `Analysis of ${item.childName || "child"}'s drawing`}
+                            </Text>
+                            <Text className={cn("text-xs text-slate-400 mt-1 font-medium", textAlign())}>{date}</Text>
+                          </View>
+                          <View className={cn("px-3 py-1.5 rounded-full bg-primary/10")}>
+                            <Text className="text-primary font-bold text-[10px]">
+                              {isRTL ? 'عرض النتيجة' : 'View'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
             </View>
           )}
 
-          {step === 2 && (
+          {step === 2 && !result && (
             <View className="gap-6">
-              <TouchableOpacity activeOpacity={0.7} className={cn("items-center gap-2 bg-card px-4 py-2.5 rounded-2xl border border-border/50", flexDir(), isRTL ? "self-end" : "self-start")} onPress={() => setStep(1)}>
-                {isRTL ? null : <ArrowLeft size={18} color="#64748B" />}
-                <Text className="text-slate-600 font-bold text-sm">{isRTL ? 'رجوع' : 'Back'}</Text>
-                {isRTL ? <ArrowRight size={18} color="#64748B" /> : null}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                className={cn(
+                  "items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-full shadow-sm",
+                  flexDir(),
+                  isRTL ? "self-end" : "self-start"
+                )}
+                onPress={() => setStep(1)}
+              >
+                {isRTL ? null : <ArrowLeft size={16} color="#475569" />}
+                <Text className="text-slate-700 dark:text-slate-300 font-bold text-xs">
+                  {isRTL ? 'رجوع' : 'Back'}
+                </Text>
+                {isRTL ? <ArrowRight size={16} color="#475569" /> : null}
               </TouchableOpacity>
 
               <View className="bg-card border border-border/50 rounded-[35px] overflow-hidden" style={{ shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 30, shadowOffset: { width: 0, height: 12 } }}>
@@ -172,6 +233,10 @@ export default function DrawingPage() {
                 <Text className={cn("text-2xl font-bold text-slate-900 mb-4", textAlign())}>
                   {isRTL ? `نتيجة تحليل ${childName || 'الرسمة'}` : `Analysis result for ${childName || 'the drawing'}`}
                 </Text>
+
+                {(result.imagePath || image) && (
+                  <Image source={{ uri: result.imagePath || image! }} className="w-full h-48 rounded-2xl mb-5 bg-slate-100" resizeMode="cover" />
+                )}
 
                 {result.analysis && (
                   <View className="gap-4">

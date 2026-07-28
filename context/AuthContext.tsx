@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/auth.service';
-import { clearTokens, getRefreshToken, getPersistedAccessToken, getPersistedUser, setPersistedUser } from '@/lib/token-storage';
+import {
+  clearTokens,
+  DEMO_ACCESS_TOKEN,
+  DEMO_REFRESH_TOKEN,
+  getRefreshToken,
+  getPersistedAccessToken,
+  getPersistedUser,
+  setPersistedUser,
+} from '@/lib/token-storage';
 import { queryClient } from '@/lib/react-query';
 import { User, LoginPayload, RegisterPayload } from '@/types';
 
@@ -18,9 +26,25 @@ type AuthContextType = {
   signUp: (data: RegisterPayload) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  updateUser: (updatedUser: User) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error('timeout')), ms);
+    promise
+      .then((value) => {
+        clearTimeout(id);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(id);
+        reject(err);
+      });
+  });
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -31,10 +55,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // On mount: try to restore session
   useEffect(() => {
     const checkAuth = async () => {
+      let persistedUser: User | null = null;
       try {
-        const accessToken = await getPersistedAccessToken();
-        const refreshToken = await getRefreshToken();
-        const persistedUser = await getPersistedUser();
+        const [accessToken, refreshToken, storedUser] = await Promise.all([
+          getPersistedAccessToken(),
+          getRefreshToken(),
+          getPersistedUser(),
+        ]);
+        persistedUser = storedUser;
+
+        if (accessToken === DEMO_ACCESS_TOKEN || refreshToken === DEMO_REFRESH_TOKEN) {
+          await clearTokens();
+          setUser(null);
+          setAuthData(null);
+          return;
+        }
 
         if (accessToken) {
           if (persistedUser) {
@@ -44,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Verify via getMe, the apiClient handles auto-refresh if token is expired
           try {
-            const userData = await authService.getMe();
+            const userData = await withTimeout(authService.getMe(), 8000);
             setUser(userData);
             setAuthData({ user: userData, token: accessToken });
             await setPersistedUser(userData);
@@ -61,15 +96,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } 
         
         if (refreshToken) {
-          const response = await authService.refresh();
-          setUser(response.user);
-          setAuthData({ user: response.user, token: response.accessToken });
-          await setPersistedUser(response.user);
+          const response = await withTimeout(authService.refresh(), 8000);
+          const token = response.accessToken;
+          let userData = response.user ?? persistedUser;
+
+          if (!userData && token) {
+            try {
+              userData = await withTimeout(authService.getMe(), 8000);
+            } catch (e: any) {
+              if (e?.statusCode === 401 || e?.statusCode === 403) throw e;
+              if (!persistedUser) throw e;
+            }
+          }
+
+          if (token && userData) {
+            setUser(userData);
+            setAuthData({ user: userData, token });
+            await setPersistedUser(userData);
+          }
         }
-      } catch {
-        await clearTokens();
-        setUser(null);
-        setAuthData(null);
+      } catch (e: any) {
+        if (e?.statusCode === 401 || e?.statusCode === 403) {
+          await clearTokens();
+          setUser(null);
+          setAuthData(null);
+          return;
+        }
+        if (!persistedUser) {
+          setUser(null);
+          setAuthData(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -151,8 +207,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const updateUser = useCallback(async (updatedUser: User) => {
+    setUser(updatedUser);
+    setAuthData(prev => prev ? { ...prev, user: updatedUser } : null);
+    await setPersistedUser(updatedUser);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, authData, loading, error, signIn, signUp, signOut, clearError }}>
+    <AuthContext.Provider value={{ user, authData, loading, error, signIn, signUp, signOut, clearError, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

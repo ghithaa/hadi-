@@ -15,7 +15,8 @@ export interface AssessmentResult {
   id: string;
   assessment_type: string;
   score: number;
-  severity_level: string;
+  severity_level?: string;
+  severity?: string;
   answers: object;
   created_at: string;
 }

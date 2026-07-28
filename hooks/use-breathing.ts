@@ -18,3 +18,10 @@ export function useLogBreathingSession() {
     },
   });
 }
+
+export function useBreathingPatterns() {
+  return useQuery({
+    queryKey: ['breathing', 'patterns'],
+    queryFn: () => breathingService.getPatterns(),
+  });
+}

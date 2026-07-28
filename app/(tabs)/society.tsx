@@ -17,6 +17,15 @@ interface CommunityGroup {
 export default function SocietyPage() {
   const { t, language, isRTL, flexDir, textAlign, alignItems, justifyContent, l, r } = useLocalization();
 
+  React.useEffect(() => {
+    Alert.alert(
+      t('common.soon') || 'قريباً',
+      isRTL 
+        ? "منصة المجتمع قيد التطوير وستكون متاحة قريباً." 
+        : "The community platform is under development and will be available soon."
+    );
+  }, []);
+
   const groups: CommunityGroup[] = [
     {
       id: 'anxiety',
@@ -59,7 +68,7 @@ export default function SocietyPage() {
       </View>
 
       {/* Organic Background Blobs */}
-      <View className="absolute inset-0 overflow-hidden opacity-[0.04]">
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden opacity-[0.04]">
         <View
           className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-primary/20"
           style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }}
@@ -85,7 +94,11 @@ export default function SocietyPage() {
               <Text className={cn("text-2xl font-bold text-foreground", textAlign())}>{t('society.title')}</Text>
               <Text className={cn("text-muted-foreground text-sm mt-0.5", textAlign())}>{t('society.subtitle')}</Text>
             </View>
-            <TouchableOpacity className={cn("items-center bg-card px-3 py-1.5 rounded-full border border-border shadow-sm shadow-black/5", flexDir())}>
+            <TouchableOpacity 
+              onPress={() => Alert.alert(t('common.soon') || 'قريباً', isRTL ? "إرشادات المجتمع ستكون متاحة قريباً." : "Community guidelines will be available soon.")}
+              activeOpacity={0.7}
+              className={cn("items-center bg-card px-3 py-1.5 rounded-full border border-border shadow-sm shadow-black/5", flexDir())}
+            >
               <Shield size={16} color="#007AFF" />
               <Text className={cn("text-primary text-[10px] font-bold uppercase tracking-wider", isRTL ? "mr-2" : "ml-2")}>{t('society.guidelines')}</Text>
             </TouchableOpacity>
@@ -111,7 +124,10 @@ export default function SocietyPage() {
         <View className="px-6">
           <View className={cn("items-center justify-between mb-6 px-1", flexDir())}>
             <Text className="text-xl font-bold text-foreground">{t('society.groups.title')}</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Alert.alert(t('common.soon') || 'قريباً', isRTL ? "استعراض كافة المجموعات سيكون متاحاً قريباً." : "Viewing all groups will be available soon.")}
+              activeOpacity={0.7}
+            >
               <Text className="text-primary text-sm font-bold">{t('society.groups.viewAll')}</Text>
             </TouchableOpacity>
           </View>

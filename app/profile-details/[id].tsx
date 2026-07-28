@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Switch, Image, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch, Image, Platform, Alert, Modal, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -16,17 +16,28 @@ import {
   Twitter,
   Instagram,
   ExternalLink,
-  Globe
+  Globe,
+  User,
+  Lock,
+  Palette
 } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalization } from '@/context/LocalizationContext';
+import { useThemeMode } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/context/AuthContext';
+import { authService } from '@/services/auth.service';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { getItem, setItem } from '@/lib/token-storage';
 
 export default function ProfileDetailsPage() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { language, setLanguage, t } = useLocalization();
+  const { user, updateUser, signOut } = useAuth();
+  const { colorScheme, toggleTheme } = useThemeMode();
 
   const sections = {
     subscription: {
@@ -89,45 +100,48 @@ export default function ProfileDetailsPage() {
       )
     },
     settings: {
-      title: t('profile.settings.title'),
+      title: language === 'ar' ? 'خيارات وتفاصيل أخرى' : 'Other Details & Support',
       icon: Settings,
-      content: () => (
-        <View className="p-4 gap-6">
-          <View className="bg-card rounded-[32px] border border-border/50 overflow-hidden shadow-sm shadow-black/[0.01]">
-            {[
-              { label: t('profile.settings.editProfile'), icon: language === 'ar' ? ChevronLeft : ChevronRight },
-              { label: t('profile.settings.changePassword'), id: 'password', value: '********', icon: language === 'ar' ? ChevronLeft : ChevronRight },
-              { label: t('profile.settings.language'), value: t('profile.settings.languageValue'), icon: language === 'ar' ? ChevronLeft : ChevronRight },
-              { label: t('profile.settings.appearance'), value: t('profile.settings.appearanceValue'), icon: language === 'ar' ? ChevronLeft : ChevronRight },
-            ].map((item, i, arr) => (
-              <TouchableOpacity
-                key={item.label}
-                className={cn(
-                  "flex-row items-center justify-between p-5",
-                  language === 'en' && "flex-row-reverse",
-                  i !== arr.length - 1 && "border-b border-border/40"
-                )}
-              >
-                <item.icon size={18} className="text-muted-foreground/50" />
-                <View className={cn("flex-row items-center gap-4", language === 'en' && "flex-row-reverse")}>
-                  {item.value && <Text className="text-muted-foreground text-sm font-medium">{item.value}</Text>}
-                  <Text className="text-foreground font-bold text-base">{item.label}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+      content: function OtherSettingsContent() {
+        const otherItems = [
+          { id: 'privacy', label: t('profile.privacy.title'), icon: Shield, color: '#22c55e', bg: 'bg-green-500/10' },
+          { id: 'help', label: t('profile.help.title'), icon: HelpCircle, color: '#06b6d4', bg: 'bg-cyan-500/10' },
+          { id: 'terms', label: t('profile.terms.title'), icon: FileText, color: '#6b7280', bg: 'bg-gray-500/10' },
+          { id: 'about', label: t('profile.about.title'), icon: Info, color: '#6366f1', bg: 'bg-indigo-500/10' },
+        ];
 
-          <TouchableOpacity className={cn("bg-destructive/5 dark:bg-destructive/10 p-6 rounded-[32px] border border-destructive/10 flex-row items-center justify-between active:scale-[0.98]", language === 'en' && "flex-row-reverse")}>
-            <View className="h-10 w-10 bg-destructive/10 rounded-xl items-center justify-center">
-              <Shield size={20} className="text-destructive" />
+        return (
+          <View className="p-4 gap-6">
+            <View className="bg-card rounded-[32px] border border-border/50 overflow-hidden shadow-sm shadow-black/[0.01]">
+              {otherItems.map((item, i, arr) => {
+                const Icon = item.icon;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() => router.push(`/profile-details/${item.id}`)}
+                    className={cn(
+                      "flex-row items-center justify-between p-5 active:bg-secondary/40",
+                      language === 'en' && "flex-row-reverse",
+                      i !== arr.length - 1 && "border-b border-border/40"
+                    )}
+                  >
+                    {language === 'ar' ? <ChevronLeft size={18} className="text-muted-foreground/50" /> : <ChevronRight size={18} className="text-muted-foreground/50" />}
+                    
+                    <View className={cn("flex-row items-center gap-4 flex-1 justify-end", language === 'en' && "flex-row-reverse justify-start")}>
+                      <View className={cn("flex-row items-center gap-3", language === 'en' && "flex-row-reverse")}>
+                        <Text className="text-foreground font-bold text-[15px]">{item.label}</Text>
+                        <View className={cn("h-10 w-10 rounded-xl items-center justify-center shadow-sm shadow-black/[0.02]", item.bg)}>
+                          <Icon size={20} color={item.color} />
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <View className={cn("flex-1 items-end mr-4", language === 'en' && "items-start ml-4 mr-0")}>
-              <Text className="text-destructive font-bold text-base">{t('profile.settings.deleteAccount')}</Text>
-              <Text className="text-destructive/60 text-[10px] font-medium mt-0.5">{t('profile.settings.deleteDesc')}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      )
+          </View>
+        );
+      }
     },
     notifications: {
       title: t('profile.notifications.title'),

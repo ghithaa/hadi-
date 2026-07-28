@@ -4,35 +4,74 @@ import * as SecureStore from 'expo-secure-store';
 const REFRESH_TOKEN_KEY = 'hadi_refresh_token';
 const ACCESS_TOKEN_KEY = 'hadi_access_token';
 const USER_DATA_KEY = 'hadi_user_data';
+const JOURNEYS_PROGRESS_KEY = 'hadi_journeys_progress';
+const CHAT_CONSENT_KEY = 'hadi_chat_consent';
 
 // Access token is also kept in-memory for fast sync access
 let _accessToken: string | null = null;
+export const DEMO_ACCESS_TOKEN = 'mock-demo-jwt-token';
+export const DEMO_REFRESH_TOKEN = 'mock-demo-refresh-jwt-token';
 
-async function getItem(key: string): Promise<string | null> {
+export async function getItem(key: string): Promise<string | null> {
   if (Platform.OS === 'web') {
-    return localStorage.getItem(key);
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
   }
-  return SecureStore.getItemAsync(key);
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    return null;
+  }
 }
 
-async function setItem(key: string, value: string): Promise<void> {
+export async function setItem(key: string, value: string): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.setItem(key, value);
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(key, value);
+      return;
+    } catch {
+      return;
+    }
+  }
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
     return;
   }
-  await SecureStore.setItemAsync(key, value);
 }
 
 async function deleteItem(key: string): Promise<void> {
   if (Platform.OS === 'web') {
-    localStorage.removeItem(key);
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.removeItem(key);
+      return;
+    } catch {
+      return;
+    }
+  }
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
     return;
   }
-  await SecureStore.deleteItemAsync(key);
 }
 
 export function getAccessToken(): string | null {
   return _accessToken;
+}
+
+export function isDemoAccessToken(token?: string | null): boolean {
+  return token === DEMO_ACCESS_TOKEN;
+}
+
+export function isDemoRefreshToken(token?: string | null): boolean {
+  return token === DEMO_REFRESH_TOKEN;
 }
 
 export async function getPersistedAccessToken(): Promise<string | null> {
@@ -80,6 +119,33 @@ export async function setPersistedUser(user: any): Promise<void> {
   } else {
     await deleteItem(USER_DATA_KEY);
   }
+}
+
+export async function getPersistedJourneysProgress(): Promise<Record<string, any> | null> {
+  const value = await getItem(JOURNEYS_PROGRESS_KEY);
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+export async function setPersistedJourneysProgress(progress: Record<string, any> | null): Promise<void> {
+  if (progress) {
+    await setItem(JOURNEYS_PROGRESS_KEY, JSON.stringify(progress));
+  } else {
+    await deleteItem(JOURNEYS_PROGRESS_KEY);
+  }
+}
+
+export async function getChatConsent(): Promise<boolean> {
+  const value = await getItem(CHAT_CONSENT_KEY);
+  return value === 'true';
+}
+
+export async function setChatConsent(consentGiven: boolean): Promise<void> {
+  await setItem(CHAT_CONSENT_KEY, consentGiven ? 'true' : 'false');
 }
 
 export async function clearTokens(): Promise<void> {

@@ -24,10 +24,16 @@ module.exports = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          '5': 'hsla(var(--primary) / 0.05)',
+          '10': 'hsla(var(--primary) / 0.1)',
+          '20': 'hsla(var(--primary) / 0.2)',
+          '30': 'hsla(var(--primary) / 0.3)',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',
+          '50': 'hsla(var(--secondary) / 0.5)',
+          '60': 'hsla(var(--secondary) / 0.6)',
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
@@ -41,7 +47,12 @@ module.exports = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          '40': 'hsla(var(--border) / 0.4)',
+          '50': 'hsla(var(--border) / 0.5)',
+          '60': 'hsla(var(--border) / 0.6)',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: {

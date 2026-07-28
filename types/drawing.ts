@@ -8,8 +8,10 @@ export interface DrawingAnalysisResult {
 export interface DrawingAnalysis {
   id: string;
   imagePath: string;
-  status: 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   analysis: DrawingAnalysisResult | null;
   analyzedAt?: string;
   createdAt: string;
+  childName?: string;
+  childAge?: string;
 }

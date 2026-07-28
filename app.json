@@ -1,10 +1,9 @@
 {
   "expo": {
     "name": "هادي",
-    "slug": "hadi",
+    "slug": "هادي",
     "version": "1.0.0",
     "orientation": "portrait",
-    "supportsRTL": true,
     "icon": "./assets/images/icon.png",
     "scheme": "hadi",
     "userInterfaceStyle": "automatic",
@@ -18,9 +17,7 @@
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/icon-foreground.png"
       },
-      "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "adjustResize",
-      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
       "package": "com.expertGroup.hadi"
     },
     "web": {

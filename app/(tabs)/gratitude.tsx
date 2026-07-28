@@ -15,9 +15,11 @@ export default function GratitudePage() {
   const logGratitude = useLogGratitude();
 
   // Flatten all items from all entries for display
-  const allItems = entries?.flatMap((entry) =>
-    entry.items.map((item, i) => ({ id: `${entry.id}-${i}`, text: item, date: entry.date }))
-  ) ?? [];
+  const allItems = Array.isArray(entries)
+    ? entries.flatMap((entry) =>
+        entry.items.map((item, i) => ({ id: `${entry.id}-${i}`, text: item, date: entry.date }))
+      )
+    : [];
 
   const handleAddItem = async () => {
     const trimmed = newItem.trim();
@@ -36,7 +38,7 @@ export default function GratitudePage() {
         <AppHeader />
       </View>
 
-      <View className="absolute inset-0 overflow-hidden opacity-[0.05]">
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden opacity-[0.05]">
         <View className="absolute -top-20 -left-20 h-[400px] w-[400px] rounded-full bg-emerald-100" style={{ transform: [{ scaleX: 1.5 }, { rotate: '45deg' }] }} />
         <View className="absolute top-1/3 -right-40 h-[350px] w-[350px] rounded-full bg-primary/10" style={{ transform: [{ scaleX: 1.2 }] }} />
         <View className="absolute -bottom-20 left-0 h-[300px] w-[300px] rounded-full bg-teal-100" />
